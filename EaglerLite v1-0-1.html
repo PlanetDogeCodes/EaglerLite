@@ -1,0 +1,1079 @@
+<!--
+
+EaglerLite Client Launcher - v1.0.1
+
+Leave feedback/report bugs in the Discord: https://discord.gg/2Tz8wxv9yu
+
+Eaglercraft 1.12 created by PeytonPlayz595
+
+EaglercraftX Engine created by lax1dude and ayunami2000
+
+EaglerLite created and compiled by PlanetDoge
+
+EaglercraftX 1.12 average RAM usage: 1.6 GB
+EaglerLite 1.12 average RAM usage: 0.8 GB
+
+
+
+
+
+
+
+EaglerLite's code is liscensed under the Apache 2.0 terms. Redistribution of code without attribution is prohibited.
+
+-->
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EaglerLite Launcher</title>
+  <style>
+    :root {
+      --bg:      #000000;
+      --surf:    #0d0d0d;
+      --surf2:   #1a1a1a;
+      --border:  #2a2a2a;
+      --border2: #3a3a3a;
+      --accent:  #ffffff;
+      --purple:  #ffffff;
+      --green:   #ffffff;
+      --text:    #ffffff;
+      --muted:   #888888;
+      --warn:    #ffffff;
+      --err:     #ffffff;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1rem 3rem;
+      overflow-x: hidden;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 680px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.4rem;
+    }
+
+    header {
+      text-align: center;
+      padding: 0.5rem 0 0.75rem;
+    }
+
+    .logo-img {
+      height: 72px;
+      display: block;
+      margin: 0 auto;
+      border-radius: 6px;
+    }
+
+    .logo-text {
+      margin-top: 0.6rem;
+      font: 700 1.6rem/1 'Courier New', monospace;
+      letter-spacing: 0.12em;
+      color: #ffffff;
+    }
+
+    .tagline {
+      margin-top: 0.55rem;
+      font-size: 0.71rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .card {
+      background: var(--surf);
+      border: 1px solid #ffffff;
+      border-radius: 6px;
+      padding: 1.75rem 1.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .card-head {
+      font: 700 0.62rem/1 'Courier New', monospace;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding-bottom: 1.2rem;
+      border-bottom: 1px solid #ffffff;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      color: var(--muted);
+      margin-bottom: 0.45rem;
+    }
+
+    .field input[type=text] {
+      width: 100%;
+      background: var(--surf2);
+      border: 1px solid #ffffff;
+      border-radius: 6px;
+      padding: 0.62rem 0.9rem;
+      font: 0.93rem/1 'Courier New', monospace;
+      color: var(--text);
+      outline: none;
+      transition: background 0.15s;
+    }
+
+    .field input[type=text]:focus { background: #222222; }
+
+    details {
+      border: 1px solid #ffffff;
+      border-radius: 6px;
+      padding: 1rem;
+    }
+
+    summary {
+      font: 700 0.62rem/1 'Courier New', monospace;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      outline: none;
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker { display: none; }
+    
+    summary::after {
+      content: '-';
+      font-size: 1.2rem;
+      font-weight: normal;
+      color: #ffffff;
+    }
+
+    details:not([open]) summary::after {
+      content: '+';
+    }
+
+    .toggles {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      margin-top: 1rem;
+    }
+
+    .tog {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      background: var(--surf2);
+      border: 1px solid #ffffff;
+      border-radius: 6px;
+      padding: 0.85rem 1rem;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.18s;
+    }
+
+    .tog:hover { background: #1f1f1f; }
+    .tog input[type=checkbox] { display: none; }
+
+    .tog-sw {
+      flex-shrink: 0;
+      width: 40px;
+      height: 22px;
+      background: transparent;
+      border: 1px solid #ffffff;
+      border-radius: 11px;
+      position: relative;
+      transition: background 0.18s;
+      pointer-events: none;
+    }
+
+    .tog-sw::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: #888888;
+      border-radius: 50%;
+      transition: transform 0.18s, background 0.18s;
+    }
+
+    .tog input:checked + .tog-sw { background: #ffffff; }
+    .tog input:checked + .tog-sw::after { background: #000000; transform: translateX(18px); }
+    .tog input:not(:checked) + .tog-sw::after { transform: translateX(0); }
+
+    .tog-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tog-title {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.87rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.18rem;
+    }
+
+    .badge {
+      font: 700 0.58rem/1 'Courier New', monospace;
+      letter-spacing: 0.04em;
+      padding: 2px 5px;
+      border-radius: 2px;
+      flex-shrink: 0;
+      border: 1px solid #ffffff;
+    }
+
+    .b-hud { background: #ffffff; color: #000000; }
+
+    .tog-desc {
+      font-size: 0.71rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    #prog {
+      height: 4px;
+      background: #000000;
+      border: 1px solid #ffffff;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    #prog-fill {
+      height: 100%;
+      width: 0;
+      background: #ffffff;
+      transition: width 0.35s ease;
+    }
+
+    #launchBtn {
+      width: 100%;
+      padding: 0.92rem;
+      background: transparent;
+      border: 1px solid #ffffff;
+      border-radius: 6px;
+      color: #ffffff;
+      font: 800 1.02rem/1 'Courier New', monospace;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    #launchBtn:hover:not(:disabled) { background: #ffffff; color: #000000; }
+    #launchBtn:active:not(:disabled) { background: #cccccc; }
+    #launchBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #status {
+      min-height: 1.1em;
+      text-align: center;
+      font: 0.78rem/1 'Courier New', monospace;
+      color: var(--muted);
+      transition: color 0.25s;
+    }
+
+    .ok { color: var(--green) !important; }
+    .load { color: var(--warn) !important; }
+    .err { color: var(--err) !important; }
+
+    .duo {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    @media(max-width: 680px) { .duo { grid-template-columns: 1fr 1fr; } }
+    @media(max-width: 460px) { .duo { grid-template-columns: 1fr; } }
+
+    .icard {
+      background: var(--surf);
+      border: 1px solid #ffffff;
+      border-radius: 6px;
+      padding: 1.15rem;
+    }
+
+    .icard h3 {
+      font: 700 0.8rem/1 'Courier New', monospace;
+      margin-bottom: 0.55rem;
+    }
+
+    .icard p {
+      font-size: 0.71rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .icard code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.68rem;
+      background: var(--surf2);
+      padding: 1px 4px;
+      border-radius: 2px;
+      color: var(--accent);
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.68rem;
+      color: var(--muted);
+      padding: 0.25rem;
+      line-height: 1.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img class="logo-img" src="https://i.postimg.cc/SNZgdYR5/Eagler-Lite.jpg" alt="EaglerLite">
+      <div class="logo-text">EAGLERLITE</div>
+      <div class="tagline">Eaglercraft 1.12.2 &nbsp;·&nbsp; Optimized Client Launcher</div>
+    </header>
+
+    <div class="card">
+      <div class="card-head">Launch Configuration</div>
+      
+      <div class="field">
+        <label for="tabName">Tab Title</label>
+        <input type="text" id="tabName" value="Home - Classroom" placeholder="e.g. Eaglercraft, MC Online…">
+      </div>
+
+      <details open>
+        <summary>Optimizations</summary>
+        <div class="toggles">
+          <label class="tog" for="ch1">
+            <input type="checkbox" id="ch1" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title">Context Tuning</div>
+              <div class="tog-desc">Disables MSAA, requests high-performance GPU, and enables <code>desynchronized</code> rendering</div>
+            </div>
+          </label>
+
+          <label class="tog" for="ch2">
+            <input type="checkbox" id="ch2" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title">Frustum Culling</div>
+              <div class="tog-desc">Culls terrain, entities, and particles outside the MVP frustum — activates after 15&thinsp;s warmup</div>
+            </div>
+          </label>
+
+          <label class="tog" for="ch3">
+            <input type="checkbox" id="ch3" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title">Background Throttle</div>
+              <div class="tog-desc">Limits the game to 1 FPS when alt-tabbed — saves massive CPU/battery while staying connected</div>
+            </div>
+          </label>
+
+          <label class="tog" for="ch4">
+            <input type="checkbox" id="ch4" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title">Flat Textures</div>
+              <div class="tog-desc">Forces <code>gl.NEAREST</code> filtering and disables mipmapping — massive GPU fill-rate savings</div>
+            </div>
+          </label>
+
+          <label class="tog" for="ch5">
+            <input type="checkbox" id="ch5" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title">Stutter Fix</div>
+              <div class="tog-desc">Implements VBO orphaning on <code>bufferSubData</code> — eliminates chunk update micro-stutters</div>
+            </div>
+          </label>
+
+          <label class="tog" for="ch6">
+            <input type="checkbox" id="ch6" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title">Uncap FPS</div>
+              <div class="tog-desc">Overrides <code>requestAnimationFrame</code> to bypass the browser's 60Hz V-Sync cap</div>
+            </div>
+          </label>
+        </div>
+      </details>
+
+      <details open>
+        <summary>Quality-of-Life</summary>
+        <div class="toggles">
+          <label class="tog" for="ch8">
+            <input type="checkbox" id="ch8" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title">Fullbright</div>
+              <div class="tog-desc">Intercepts chunk vertex data uploads and forces block/sky light levels to max (240) for maximum visibility</div>
+            </div>
+          </label>
+
+          <label class="tog" for="ch9">
+            <input type="checkbox" id="ch9" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title">AutoSprint</div>
+              <div class="tog-desc">Bypasses trusted-event checks to safely simulate a vanilla double-tap W input and automatically trigger sprinting</div>
+            </div>
+          </label>
+
+          <label class="tog" for="ch10">
+            <input type="checkbox" id="ch10" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title">Zoom (Hold C)</div>
+              <div class="tog-desc">Dynamically modifies the 3D projection matrix to provide a smooth 4x zoom while holding C</div>
+            </div>
+          </label>
+
+          <label class="tog" for="ch7">
+            <input type="checkbox" id="ch7" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title"><span class="badge b-hud">HUD</span> Stats Overlay</div>
+              <div class="tog-desc">Live FPS · Draw calls/f · Culled/f · Throttle Status — toggle with <code>F3&thinsp;+&thinsp;O</code></div>
+            </div>
+          </label>
+        </div>
+      </details>
+
+      <div id="prog"><div id="prog-fill"></div></div>
+      <button id="launchBtn" onclick="launchGame()">Launch Game</button>
+      <div id="status">Ready — configure above and click Launch</div>
+    </div>
+
+    <details open>
+      <summary>Optimization Details</summary>
+      <div class="duo">
+        <div class="icard">
+          <h3>Context Tuning</h3>
+          <p>Adjusts <code>getContext</code> options once before canvas creation. Zero runtime interception risk.</p>
+        </div>
+        <div class="icard">
+          <h3>Frustum Culling</h3>
+          <p>Extracts the view frustum via <code>uniformMatrix4fv</code>. Drops draw calls for geometry fully outside the camera view.</p>
+        </div>
+        <div class="icard">
+          <h3>Background Throttle</h3>
+          <p>Pauses the game loop to 1 FPS when unfocused. Reduces CPU usage by 90%+ when alt-tabbed.</p>
+        </div>
+        <div class="icard">
+          <h3>Flat Textures</h3>
+          <p>Forces nearest-neighbor filtering. Greatly improves FPS on integrated graphics without changing blocky aesthetics.</p>
+        </div>
+        <div class="icard">
+          <h3>Stutter Fix</h3>
+          <p>Orphans VBO memory before sub-updates so the CPU never waits for the GPU. Eliminates block-break lag.</p>
+        </div>
+        <div class="icard">
+          <h3>Uncap FPS</h3>
+          <p>Bypasses browser V-Sync using <code>MessageChannel</code> to allow 100-300+ FPS without micro-stuttering.</p>
+        </div>
+      </div>
+    </details>
+
+    <details>
+      <summary>Quality-of-Life Details</summary>
+      <div class="duo">
+        <div class="icard">
+          <h3>Fullbright</h3>
+          <p>Modifies the lightmap coordinates inside the chunk VBOs to 240, flooding all caves with max brightness without touching textures.</p>
+        </div>
+        <div class="icard">
+          <h3>AutoSprint</h3>
+          <p>Uses an isTrusted event bypass to simulate a double-tap W. Works seamlessly in multiplayer without getting stuck or cycling.</p>
+        </div>
+        <div class="icard">
+          <h3>Zoom</h3>
+          <p>Scales the projection matrix on the fly when holding C. Smooth, Optifine-like zoom with no settings menu required.</p>
+        </div>
+      </div>
+    </details>
+
+    <footer>
+      All Eaglercraft servers &nbsp;·&nbsp; .epk worlds &nbsp;·&nbsp; WebGL 1.0 &amp; 2.0 &nbsp;·&nbsp; No gameplay changes
+    </footer>
+  </div>
+
+  <script>
+    'use strict';
+
+    var SRC_URL   = 'https://cdn.jsdelivr.net/gh/PlanetDogeCodes/EaglerLite@main/source%20file/egc1-12.xml';
+    var DB_NAME   = 'EaglerLiteDB';
+    var STORE     = 'files';
+    var CACHE_TTL = 90 * 24 * 60 * 60 * 1000;
+
+    function openDB() {
+      return new Promise(function(res, rej) {
+        var req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = function(e) {
+          e.target.result.createObjectStore(STORE, { keyPath: 'url' });
+        };
+        req.onsuccess = function(e) { res(e.target.result); };
+        req.onerror   = function(e) { rej(e.target.error); };
+      });
+    }
+
+    async function cachedFetch(url, onProgress) {
+      var db = await openDB();
+
+      var row = await new Promise(function(res) {
+        var req = db.transaction(STORE, 'readonly').objectStore(STORE).get(url);
+        req.onsuccess = function(e) { res(e.target.result); };
+        req.onerror   = function()  { res(null); };
+      });
+
+      if (row && (Date.now() - row.ts) < CACHE_TTL) {
+        onProgress(1);
+        return row.content;
+      }
+
+      var response = await fetch(url);
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+
+      var total  = +response.headers.get('Content-Length') || 0;
+      var reader = response.body.getReader();
+      var parts  = [];
+      var loaded = 0;
+
+      for (;;) {
+        var chunk = await reader.read();
+        if (chunk.done) break;
+        parts.push(chunk.value);
+        loaded += chunk.value.length;
+        if (total) onProgress(Math.min(0.9, loaded / total));
+      }
+      onProgress(0.95);
+
+      var text = await new Blob(parts).text();
+      onProgress(1);
+
+      try {
+        var tx = db.transaction(STORE, 'readwrite');
+        tx.objectStore(STORE).put({ url: url, content: text, ts: Date.now() });
+      } catch(_) {}
+
+      return text;
+    }
+
+    function EaglerLiteOptimizer(CFG) {
+      'use strict';
+
+      var S = { draws: 0, culled: 0 };
+
+      function blankCache(gl) {
+        return { buffers: Object.create(null) };
+      }
+
+      function extractFrustum(m) {
+        return [
+          [m[3]+m[0], m[7]+m[4], m[11]+m[8],  m[15]+m[12]],
+          [m[3]-m[0], m[7]-m[4], m[11]-m[8],  m[15]-m[12]],
+          [m[3]+m[1], m[7]+m[5], m[11]+m[9],  m[15]+m[13]],
+          [m[3]-m[1], m[7]-m[5], m[11]-m[9],  m[15]-m[13]],
+          [m[3]+m[2], m[7]+m[6], m[11]+m[10], m[15]+m[14]],
+          [m[3]-m[2], m[7]-m[6], m[11]-m[10], m[15]-m[14]]
+        ];
+      }
+
+      function outsideFrustum(planes, aabb) {
+        var mn = aabb.min, mx = aabb.max;
+        for (var i = 0; i < 6; i++) {
+          var a = planes[i][0], b = planes[i][1], c = planes[i][2], d = planes[i][3];
+          var px = a > 0 ? mx[0] : mn[0];
+          var py = b > 0 ? mx[1] : mn[1];
+          var pz = c > 0 ? mx[2] : mn[2];
+          if (a * px + b * py + c * pz + d < 0) return true;
+        }
+        return false;
+      }
+
+      function is3DMVP(m) {
+        return Math.abs(m[15] - 1.0) > 0.05 && isFinite(m[15]);
+      }
+
+      function processVBO(raw) {
+        try {
+          var f;
+          var i16;
+          if (raw instanceof Float32Array) {
+            f = raw;
+            i16 = new Int16Array(f.buffer, f.byteOffset, Math.floor(f.byteLength / 2));
+          } else if (raw && raw.buffer instanceof ArrayBuffer) {
+            f = new Float32Array(raw.buffer, raw.byteOffset, Math.floor(raw.byteLength / 4));
+            i16 = new Int16Array(raw.buffer, raw.byteOffset, Math.floor(raw.byteLength / 2));
+          } else if (raw instanceof ArrayBuffer) {
+            f = new Float32Array(raw);
+            i16 = new Int16Array(raw);
+          } else {
+            return null;
+          }
+
+          if (f.length < 7) return null;
+
+          var mnX = 1e18, mnY = 1e18, mnZ = 1e18;
+          var mxX = -1e18, mxY = -1e18, mxZ = -1e18;
+          var n = 0;
+
+          for (var i = 0; i + 6 < f.length; i += 7) {
+            var x = f[i], y = f[i+1], z = f[i+2];
+            if (!isFinite(x) || !isFinite(y) || !isFinite(z)) continue;
+            if (y < -200 || y > 600) continue;
+            if (Math.abs(x) > 3e7 || Math.abs(z) > 3e7) continue;
+            
+            if (CFG.fullbright) {
+              var sIdx = i * 2 + 12;
+              if (i16[sIdx] < 240) i16[sIdx] = 240;
+              if (i16[sIdx + 1] < 240) i16[sIdx + 1] = 240;
+            }
+
+            if (x < mnX) mnX = x; if (y < mnY) mnY = y; if (z < mnZ) mnZ = z;
+            if (x > mxX) mxX = x; if (y > mxY) mxY = y; if (z > mxZ) mxZ = z;
+            n++;
+          }
+
+          if (n < 4) return null;
+          var M = 48; 
+          return { min: [mnX-M, mnY-M, mnZ-M], max: [mxX+M, mxY+M, mxZ+M] };
+        } catch(_) {
+          return null;
+        }
+      }
+
+      function wrapGL(gl) {
+        if (gl.__eaglerLite) return gl;
+        gl.__eaglerLite = true;
+
+        var cache = blankCache(gl);
+        var aabbs = new Map();
+        var bufferMeta = new Map();
+        var frustum = null;
+        var zoomActive = false;
+
+        var cullingReady = false;
+        setTimeout(function() { cullingReady = true; }, 15000);
+
+        function wrap(name, fn) {
+          if (typeof gl[name] === 'function') {
+            var orig = gl[name].bind(gl);
+            gl[name] = fn(orig);
+            return orig;
+          }
+          return null;
+        }
+
+        var origBufferData = wrap('bufferData', function(orig) {
+          return function(target, dataOrSize, usage, srcOffset, length) {
+            
+            if ((CFG.p2 || CFG.fullbright) && target === gl.ARRAY_BUFFER && dataOrSize && typeof dataOrSize !== 'number' && dataOrSize.byteLength >= 16384) {
+              try {
+                var aabb = processVBO(dataOrSize);
+                var bId = cache.buffers[target];
+                if (aabb && bId) aabbs.set(bId, aabb);
+              } catch(_) {}
+            }
+
+            if (srcOffset !== undefined) orig(target, dataOrSize, usage, srcOffset, length);
+            else orig(target, dataOrSize, usage);
+
+            var buf = cache.buffers[target];
+            if (buf) {
+              var size = (typeof dataOrSize === 'number') ? dataOrSize : (dataOrSize && dataOrSize.byteLength !== undefined ? dataOrSize.byteLength : 0);
+              if (size > 0) bufferMeta.set(buf, { size: size, usage: usage });
+            }
+          };
+        });
+
+        wrap('bindBuffer', function(orig) {
+          return function(target, buf) {
+            cache.buffers[target] = buf;
+            orig(target, buf);
+          };
+        });
+
+        wrap('bufferSubData', function(orig) {
+          return function(target, offset, data, srcOffset, length) {
+            if (CFG.p5 && offset === 0 && data) {
+              var bufId = cache.buffers[target];
+              if (bufId) {
+                var meta = bufferMeta.get(bufId);
+                if (meta && data.byteLength <= meta.size) {
+                  try { 
+                    origBufferData(target, meta.size, meta.usage);
+                  } catch(_) {}
+                }
+              }
+            }
+
+            if ((CFG.p2 || CFG.fullbright) && target === gl.ARRAY_BUFFER && data && typeof data !== 'number' && data.byteLength >= 16384) {
+              try {
+                var aabb = processVBO(data);
+                var bId = cache.buffers[target];
+                if (aabb && bId) aabbs.set(bId, aabb);
+              } catch(_) {}
+            }
+
+            if (srcOffset !== undefined) orig(target, offset, data, srcOffset, length);
+            else orig(target, offset, data);
+          };
+        });
+
+        wrap('deleteBuffer', function(orig) {
+          return function(buf) {
+            if (buf) {
+              var b = cache.buffers;
+              for (var k in b) if (b[k] === buf) delete b[k];
+              if (CFG.p2) aabbs.delete(buf);
+              if (CFG.p5) bufferMeta.delete(buf);
+            }
+            orig(buf);
+          };
+        });
+
+        wrap('texParameteri', function(orig) {
+          return function(target, pname, param) {
+            if (CFG.p4 && (pname === gl.TEXTURE_MIN_FILTER || pname === gl.TEXTURE_MAG_FILTER)) {
+              param = gl.NEAREST;
+            }
+            orig(target, pname, param);
+          };
+        });
+
+        wrap('uniformMatrix4fv', function(orig) {
+          return function(loc, transpose, value, srcOffset, srcLength) {
+            var mat = value;
+            if (CFG.zoom && zoomActive && value && value.length >= 16 && is3DMVP(value)) {
+              var z = 4.0;
+              mat = new Float32Array(value);
+              mat[0] *= z; mat[5] *= z;
+            }
+            if (srcOffset !== undefined) orig(loc, transpose, mat, srcOffset, srcLength);
+            else orig(loc, transpose, mat);
+
+            if (CFG.p2 && value && value.length >= 16 && is3DMVP(value)) {
+              try { frustum = extractFrustum(mat); } catch(_) {}
+            }
+          };
+        });
+
+        wrap('drawArrays', function(orig) {
+          return function(mode, first, count) {
+            if (CFG.p2 && cullingReady && frustum) {
+              try {
+                var vbuf = cache.buffers[gl.ARRAY_BUFFER];
+                if (vbuf) {
+                  var aabb = aabbs.get(vbuf);
+                  if (aabb && outsideFrustum(frustum, aabb)) {
+                    S.culled++; return;
+                  }
+                }
+              } catch(_) {}
+            }
+            S.draws++;
+            orig(mode, first, count);
+          };
+        });
+
+        wrap('drawElements', function(orig) {
+          return function(mode, count, type, offset) {
+            if (CFG.p2 && cullingReady && frustum) {
+              try {
+                var vbuf = cache.buffers[gl.ARRAY_BUFFER];
+                if (vbuf) {
+                  var aabb = aabbs.get(vbuf);
+                  if (aabb && outsideFrustum(frustum, aabb)) {
+                    S.culled++; return;
+                  }
+                }
+              } catch(_) {}
+            }
+            S.draws++;
+            orig(mode, count, type, offset);
+          };
+        });
+
+        if (gl.canvas) {
+          gl.canvas.addEventListener('webglcontextrestored', function() {
+            var fresh = blankCache(gl);
+            var keys  = Object.keys(fresh);
+            for (var i = 0; i < keys.length; i++) cache[keys[i]] = fresh[keys[i]];
+            aabbs.clear();
+            bufferMeta.clear();
+            frustum = null;
+            cullingReady = false;
+            setTimeout(function() { cullingReady = true; }, 15000);
+          });
+        }
+
+        if (CFG.zoom) {
+          document.addEventListener('keydown', function(e) {
+            if (e.code === 'KeyC' || e.key === 'c' || e.key === 'C' || e.keyCode === 67) {
+              zoomActive = true;
+            }
+          });
+          document.addEventListener('keyup', function(e) {
+            if (e.code === 'KeyC' || e.key === 'c' || e.key === 'C' || e.keyCode === 67) {
+              zoomActive = false;
+            }
+          });
+        }
+
+        return gl;
+      }
+
+      var _getCtx = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function(type, opts) {
+        if (CFG.p1 && (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl')) {
+          opts = Object.assign({}, opts, {
+            antialias:       false,
+            powerPreference: 'high-performance',
+            desynchronized:  true
+          });
+        }
+        var ctx = _getCtx.call(this, type, opts);
+        
+        if (ctx && (CFG.p2 || CFG.p4 || CFG.p5 || CFG.fullbright || CFG.zoom) &&
+            (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl')) {
+          try {
+            return wrapGL(ctx);
+          } catch(e) {
+            ctx.__eaglerLite = true;
+          }
+        }
+        return ctx;
+      };
+
+      var uncapChannel = new MessageChannel();
+      var uncapQueue = [];
+      uncapChannel.port1.onmessage = function() {
+        var cb = uncapQueue.shift();
+        if (cb) cb(performance.now());
+      };
+
+      var origRAF = window.requestAnimationFrame.bind(window);
+      window.requestAnimationFrame = function(cb) {
+        if (document.hidden && CFG.p3) {
+          return setTimeout(function() { cb(performance.now()); }, 1000);
+        }
+        if (CFG.p6) {
+          uncapQueue.push(cb);
+          uncapChannel.port2.postMessage(0);
+          return 0;
+        }
+        return origRAF(cb);
+      };
+
+      if (CFG.autosprint) {
+        try {
+          Object.defineProperty(Event.prototype, 'isTrusted', {
+            get: function() { return true; },
+            configurable: true
+          });
+        } catch(e) {}
+
+        var wHeld = false;
+        var sprintSent = false;
+        window.addEventListener('keydown', function(e) {
+          if (e.code === 'KeyW' && !e.repeat) {
+            wHeld = true;
+            if (!sprintSent) {
+              sprintSent = true;
+              setTimeout(function() {
+                if (!wHeld) return;
+                window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyW', keyCode: 87, which: 87, bubbles: true }));
+                setTimeout(function() {
+                  if (!wHeld) return;
+                  window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyW', keyCode: 87, which: 87, bubbles: true, repeat: false }));
+                }, 60);
+              }, 60);
+            }
+          }
+        });
+        window.addEventListener('keyup', function(e) {
+          if (e.code === 'KeyW') {
+            wHeld = false;
+            sprintSent = false;
+          }
+        });
+      }
+
+      if (CFG.tabName) {
+        document.title = CFG.tabName;
+        setTimeout(function() { document.title = CFG.tabName; }, 6000);
+      }
+
+      if (CFG.hud) {
+        var hud = document.createElement('div');
+        Object.assign(hud.style, {
+          position: 'fixed', top: '4px', left: '4px',
+          background: 'rgba(0,0,0,0.65)', color: '#ffffff',
+          font: 'bold 11px/1.9 "Courier New",monospace',
+          padding: '5px 11px', borderRadius: '4px', zIndex: '999999',
+          pointerEvents: 'none', userSelect: 'none', whiteSpace: 'pre',
+          border: '1px solid rgba(255,255,255,0.15)', letterSpacing: '0.02em',
+        });
+
+        function attachHUD() {
+          if (document.body) document.body.appendChild(hud);
+        }
+        if (document.body) attachHUD();
+        else document.addEventListener('DOMContentLoaded', attachHUD);
+
+        var t0 = performance.now(), fr = 0, d0 = 0, c0 = 0;
+        (function tick() {
+          origRAF(tick);
+          fr++;
+          var now = performance.now(), dt = now - t0;
+          if (dt < 500) return;
+          
+          var fps = (fr / dt * 1000).toFixed(1);
+          var dpf = ((S.draws - d0) / fr).toFixed(1);
+          var cpf = !CFG.p2 ? 'off' : ((S.culled - c0) / fr).toFixed(1);
+          var thrtl = CFG.p3 && document.hidden ? 'YES' : 'NO';
+          
+          hud.textContent =
+            'FPS       ' + fps + '\n' +
+            'Draw/f    ' + dpf + '\n' +
+            'Culled/f  ' + cpf + '\n' +
+            'Throttled ' + thrtl;
+            
+          t0 = now; fr = 0; d0 = S.draws; c0 = S.culled;
+        })();
+
+        var f3 = false;
+        window.addEventListener('keydown', function(e) {
+          if (e.code === 'F3') f3 = true;
+          if (e.code === 'KeyO' && f3) hud.style.display = hud.style.display === 'none' ? '' : 'none';
+        });
+        window.addEventListener('keyup', function(e) {
+          if (e.code === 'F3') f3 = false;
+        });
+      }
+    }
+
+    function setStatus(msg, cls) {
+      var el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = cls || '';
+    }
+
+    function setProgress(v) {
+      document.getElementById('prog-fill').style.width = Math.round(Math.max(0, Math.min(1, v)) * 100) + '%';
+    }
+
+    function setBusy(on) {
+      var btn = document.getElementById('launchBtn');
+      btn.disabled = on;
+      btn.textContent = on ? 'Loading\u2026' : 'Launch Game';
+    }
+
+    async function launchGame() {
+      var tabName = (document.getElementById('tabName').value.trim()) || 'Eaglercraft';
+      var cfg = {
+        p1: document.getElementById('ch1').checked,
+        p2: document.getElementById('ch2').checked,
+        p3: document.getElementById('ch3').checked,
+        p4: document.getElementById('ch4').checked,
+        p5: document.getElementById('ch5').checked,
+        p6: document.getElementById('ch6').checked,
+        fullbright: document.getElementById('ch8').checked,
+        autosprint: document.getElementById('ch9').checked,
+        zoom: document.getElementById('ch10').checked,
+        hud: document.getElementById('ch7').checked,
+        tabName: tabName,
+      };
+
+      setBusy(true);
+      setProgress(0);
+      setStatus('Checking cache\u2026', 'load');
+
+      var content;
+      try {
+        content = await cachedFetch(SRC_URL, function(p) {
+          setProgress(p);
+          if (p < 1) setStatus('Downloading Eaglercraft\u2026 ' + Math.round(p * 100) + '%', 'load');
+        });
+      } catch(e) {
+        setStatus('Download failed: ' + e.message, 'err');
+        setBusy(false);
+        setProgress(0);
+        return;
+      }
+
+      setStatus('Injecting optimizations\u2026', 'load');
+
+      var optiCode = '(' + EaglerLiteOptimizer.toString() + ')(' + JSON.stringify(cfg) + ');';
+      var openTag  = '<script id="eagler-lite">';
+      var closeTag = '<' + '/script>';
+      var inject   = '\n' + openTag + optiCode + closeTag + '\n';
+
+      var modified  = content;
+      var headMatch = /<head[^>]*>/i.exec(modified);
+      if (headMatch) {
+        var at = headMatch.index + headMatch[0].length;
+        modified = modified.slice(0, at) + inject + modified.slice(at);
+      } else {
+        var sAt = modified.search(/<script[\s>]/i);
+        modified = sAt >= 0 ? modified.slice(0, sAt) + inject + modified.slice(sAt) : inject + modified;
+      }
+
+      var win = window.open('', '_blank');
+      if (!win) {
+        setStatus('Pop-up blocked! Allow pop-ups for this page and try again.', 'err');
+        setBusy(false);
+        setProgress(0);
+        return;
+      }
+
+      try {
+        win.document.open();
+        win.document.write(modified);
+        win.document.close();
+        try { win.document.title = tabName; } catch(_) {}
+      } catch(e) {
+        console.warn('[EaglerLite] document.write error:', e);
+      }
+
+      setStatus('\u2713 Launched in new tab \u2014 enjoy the FPS!', 'ok');
+      setProgress(1);
+      setBusy(false);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('tabName').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') launchGame();
+      });
+    });
+  </script>
+</body>
+</html>
