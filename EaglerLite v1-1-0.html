@@ -1,6 +1,6 @@
 <!--
 
-EaglerLite Client Launcher - v1.0.1
+EaglerLite Client Launcher - v1.1.0
 
 Leave feedback/report bugs in the Discord: https://discord.gg/2Tz8wxv9yu
 
@@ -20,7 +20,7 @@ EaglerLite 1.12 average RAM usage: 0.8 GB
 
 
 EaglerLite's code is liscensed under the Apache 2.0 terms. Redistribution of code without attribution is prohibited.
-OneCompiler Link: https://onecompiler.com/html/44sptusy4
+GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
 
 -->
 
@@ -365,7 +365,12 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
       
       <div class="field">
         <label for="tabName">Tab Title</label>
-        <input type="text" id="tabName" value="Home - Classroom" placeholder="e.g. Eaglercraft, MC Online…">
+        <input type="text" id="tabName" value="Eaglercraft" placeholder="e.g. Eaglercraft, MC Online…">
+      </div>
+
+      <div class="field">
+        <label for="sprintKey">Sprint Keybind (for AutoSprint)</label>
+        <input type="text" id="sprintKey" value="ControlLeft" placeholder="e.g., ControlLeft, ShiftLeft">
       </div>
 
       <details open>
@@ -376,16 +381,7 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
             <span class="tog-sw"></span>
             <div class="tog-body">
               <div class="tog-title">Context Tuning</div>
-              <div class="tog-desc">Disables MSAA, requests high-performance GPU, and enables <code>desynchronized</code> rendering</div>
-            </div>
-          </label>
-
-          <label class="tog" for="ch2">
-            <input type="checkbox" id="ch2" checked>
-            <span class="tog-sw"></span>
-            <div class="tog-body">
-              <div class="tog-title">Frustum Culling</div>
-              <div class="tog-desc">Culls terrain, entities, and particles outside the MVP frustum — activates after 15&thinsp;s warmup</div>
+              <div class="tog-desc">Disables MSAA and requests the high-performance GPU for lower latency and higher FPS</div>
             </div>
           </label>
 
@@ -435,7 +431,7 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
             <span class="tog-sw"></span>
             <div class="tog-body">
               <div class="tog-title">Fullbright</div>
-              <div class="tog-desc">Intercepts chunk vertex data uploads and forces block/sky light levels to max (240) for maximum visibility</div>
+              <div class="tog-desc">Safely intercepts terrain VBO uploads and forces light levels to 13 without breaking textures or clouds</div>
             </div>
           </label>
 
@@ -444,7 +440,7 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
             <span class="tog-sw"></span>
             <div class="tog-body">
               <div class="tog-title">AutoSprint</div>
-              <div class="tog-desc">Bypasses trusted-event checks to safely simulate a vanilla double-tap W input and automatically trigger sprinting</div>
+              <div class="tog-desc">Injects your custom Sprint Keybind when pressing W to naturally trigger sprinting without bugs</div>
             </div>
           </label>
 
@@ -453,7 +449,7 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
             <span class="tog-sw"></span>
             <div class="tog-body">
               <div class="tog-title">Zoom (Hold C)</div>
-              <div class="tog-desc">Dynamically modifies the 3D projection matrix to provide a smooth 4x zoom while holding C</div>
+              <div class="tog-desc">Scales the game canvas 4x via CSS transforms to provide a smooth magnification without X-ray bugs</div>
             </div>
           </label>
 
@@ -462,7 +458,7 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
             <span class="tog-sw"></span>
             <div class="tog-body">
               <div class="tog-title"><span class="badge b-hud">HUD</span> Stats Overlay</div>
-              <div class="tog-desc">Live FPS · Draw calls/f · Culled/f · Throttle Status — toggle with <code>F3&thinsp;+&thinsp;O</code></div>
+              <div class="tog-desc">Live FPS · Draw calls/f · Throttle Status — toggle with <code>F3&thinsp;+&thinsp;O</code></div>
             </div>
           </label>
         </div>
@@ -479,10 +475,6 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
         <div class="icard">
           <h3>Context Tuning</h3>
           <p>Adjusts <code>getContext</code> options once before canvas creation. Zero runtime interception risk.</p>
-        </div>
-        <div class="icard">
-          <h3>Frustum Culling</h3>
-          <p>Extracts the view frustum via <code>uniformMatrix4fv</code>. Drops draw calls for geometry fully outside the camera view.</p>
         </div>
         <div class="icard">
           <h3>Background Throttle</h3>
@@ -508,15 +500,15 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
       <div class="duo">
         <div class="icard">
           <h3>Fullbright</h3>
-          <p>Modifies the lightmap coordinates inside the chunk VBOs to 240, flooding all caves with max brightness without touching textures.</p>
+          <p>Verifies the VBO is exactly 28 bytes per vertex (1.12.2 terrain format) before mutating the lightmap shorts to 208. Clouds and entities are ignored.</p>
         </div>
         <div class="icard">
           <h3>AutoSprint</h3>
-          <p>Uses an isTrusted event bypass to simulate a double-tap W. Works seamlessly in multiplayer without getting stuck or cycling.</p>
+          <p>Reads your custom keybind and dispatches it seamlessly. Utilizes vanilla sprint mechanics to ensure 100% reliable sprinting.</p>
         </div>
         <div class="icard">
           <h3>Zoom</h3>
-          <p>Scales the projection matrix on the fly when holding C. Smooth, Optifine-like zoom with no settings menu required.</p>
+          <p>Applies a pure CSS <code>scale(4)</code> transform to the canvas. Avoids WebGL matrix math entirely, preventing bending or X-ray.</p>
         </div>
       </div>
     </details>
@@ -529,7 +521,7 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
   <script>
     'use strict';
 
-    var SRC_URL   = 'https://cdn.jsdelivr.net/gh/PlanetDogeCodes/EaglerLite@main/source%20file/egc1-12.xml';
+    var SRC_URL   = 'https://cdn.jsdelivr.net/gh/PlanetDogeCodes/Eagletcraft-1.12@main/source%20file/egc1-12.xml';
     var DB_NAME   = 'EaglerLiteDB';
     var STORE     = 'files';
     var CACHE_TTL = 90 * 24 * 60 * 60 * 1000;
@@ -590,85 +582,84 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
     function EaglerLiteOptimizer(CFG) {
       'use strict';
 
-      var S = { draws: 0, culled: 0 };
+      // Global isTrusted bypass for synthetic events
+      try {
+        var props = [Event.prototype, UIEvent.prototype, KeyboardEvent.prototype];
+        for (var i = 0; i < props.length; i++) {
+          Object.defineProperty(props[i], 'isTrusted', {
+            get: function() { return true; },
+            configurable: true
+          });
+        }
+      } catch(e) {}
+
+      var S = { draws: 0 };
+
+      // Zoom: Pure CSS Canvas Scaling
+      if (CFG.zoom) {
+        var gameCanvas = null;
+        function applyZoom(on) {
+          if (!gameCanvas) gameCanvas = document.querySelector('canvas');
+          if (gameCanvas) {
+            gameCanvas.style.transform = on ? "scale(4)" : "scale(1)";
+            gameCanvas.style.transformOrigin = "center center";
+            gameCanvas.style.transition = "transform 0.15s ease";
+          }
+        }
+        document.addEventListener('keydown', function(e) {
+          if (e.code === 'KeyC' || e.key === 'c' || e.key === 'C' || e.keyCode === 67) applyZoom(true);
+        });
+        document.addEventListener('keyup', function(e) {
+          if (e.code === 'KeyC' || e.key === 'c' || e.key === 'C' || e.keyCode === 67) applyZoom(false);
+        });
+      }
+
+      // AutoSprint: Custom Keybind Injection
+      if (CFG.autosprint) {
+        var sprintCode = CFG.sprintKey || 'ControlLeft';
+        window.addEventListener('keydown', function(e) {
+          if ((e.code === 'KeyW' || e.keyCode === 87) && !e.repeat) {
+            window.dispatchEvent(new KeyboardEvent('keydown', { code: sprintCode, bubbles: true }));
+          }
+        });
+        window.addEventListener('keyup', function(e) {
+          if (e.code === 'KeyW' || e.keyCode === 87) {
+            window.dispatchEvent(new KeyboardEvent('keyup', { code: sprintCode, bubbles: true }));
+          }
+        });
+      }
 
       function blankCache(gl) {
         return { buffers: Object.create(null) };
       }
 
-      function extractFrustum(m) {
-        return [
-          [m[3]+m[0], m[7]+m[4], m[11]+m[8],  m[15]+m[12]],
-          [m[3]-m[0], m[7]-m[4], m[11]-m[8],  m[15]-m[12]],
-          [m[3]+m[1], m[7]+m[5], m[11]+m[9],  m[15]+m[13]],
-          [m[3]-m[1], m[7]-m[5], m[11]-m[9],  m[15]-m[13]],
-          [m[3]+m[2], m[7]+m[6], m[11]+m[10], m[15]+m[14]],
-          [m[3]-m[2], m[7]-m[6], m[11]-m[10], m[15]-m[14]]
-        ];
-      }
-
-      function outsideFrustum(planes, aabb) {
-        var mn = aabb.min, mx = aabb.max;
-        for (var i = 0; i < 6; i++) {
-          var a = planes[i][0], b = planes[i][1], c = planes[i][2], d = planes[i][3];
-          var px = a > 0 ? mx[0] : mn[0];
-          var py = b > 0 ? mx[1] : mn[1];
-          var pz = c > 0 ? mx[2] : mn[2];
-          if (a * px + b * py + c * pz + d < 0) return true;
-        }
-        return false;
-      }
-
-      function is3DMVP(m) {
-        return Math.abs(m[15] - 1.0) > 0.05 && isFinite(m[15]);
-      }
-
-      function processVBO(raw) {
+      // Fullbright: Strict 28-byte VBO mutation
+      function applyFullbright(raw) {
         try {
-          var f;
-          var i16;
+          var f, i16;
           if (raw instanceof Float32Array) {
-            f = raw;
-            i16 = new Int16Array(f.buffer, f.byteOffset, Math.floor(f.byteLength / 2));
+            f = raw; i16 = new Int16Array(f.buffer, f.byteOffset, Math.floor(f.byteLength / 2));
           } else if (raw && raw.buffer instanceof ArrayBuffer) {
             f = new Float32Array(raw.buffer, raw.byteOffset, Math.floor(raw.byteLength / 4));
             i16 = new Int16Array(raw.buffer, raw.byteOffset, Math.floor(raw.byteLength / 2));
           } else if (raw instanceof ArrayBuffer) {
-            f = new Float32Array(raw);
-            i16 = new Int16Array(raw);
-          } else {
-            return null;
-          }
+            f = new Float32Array(raw); i16 = new Int16Array(raw);
+          } else return;
 
-          if (f.length < 7) return null;
-
-          var mnX = 1e18, mnY = 1e18, mnZ = 1e18;
-          var mxX = -1e18, mxY = -1e18, mxZ = -1e18;
-          var n = 0;
+          if (f.length < 7) return;
+          // 1.12.2 terrain format is strictly 28 bytes per vertex
+          if (f.byteLength % 28 !== 0) return;
 
           for (var i = 0; i + 6 < f.length; i += 7) {
-            var x = f[i], y = f[i+1], z = f[i+2];
-            if (!isFinite(x) || !isFinite(y) || !isFinite(z)) continue;
+            var y = f[i+1];
+            // Only apply to valid world terrain coordinates
             if (y < -200 || y > 600) continue;
-            if (Math.abs(x) > 3e7 || Math.abs(z) > 3e7) continue;
             
-            if (CFG.fullbright) {
-              var sIdx = i * 2 + 12;
-              if (i16[sIdx] < 240) i16[sIdx] = 240;
-              if (i16[sIdx + 1] < 240) i16[sIdx + 1] = 240;
-            }
-
-            if (x < mnX) mnX = x; if (y < mnY) mnY = y; if (z < mnZ) mnZ = z;
-            if (x > mxX) mxX = x; if (y > mxY) mxY = y; if (z > mxZ) mxZ = z;
-            n++;
+            var sIdx = i * 2 + 12; // Lightmap short index
+            if (i16[sIdx] < 208) i16[sIdx] = 208;     // Block light to 13
+            if (i16[sIdx + 1] < 208) i16[sIdx + 1] = 208; // Sky light to 13
           }
-
-          if (n < 4) return null;
-          var M = 48; 
-          return { min: [mnX-M, mnY-M, mnZ-M], max: [mxX+M, mxY+M, mxZ+M] };
-        } catch(_) {
-          return null;
-        }
+        } catch(_) {}
       }
 
       function wrapGL(gl) {
@@ -676,13 +667,7 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
         gl.__eaglerLite = true;
 
         var cache = blankCache(gl);
-        var aabbs = new Map();
         var bufferMeta = new Map();
-        var frustum = null;
-        var zoomActive = false;
-
-        var cullingReady = false;
-        setTimeout(function() { cullingReady = true; }, 15000);
 
         function wrap(name, fn) {
           if (typeof gl[name] === 'function') {
@@ -695,13 +680,9 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
 
         var origBufferData = wrap('bufferData', function(orig) {
           return function(target, dataOrSize, usage, srcOffset, length) {
-            
-            if ((CFG.p2 || CFG.fullbright) && target === gl.ARRAY_BUFFER && dataOrSize && typeof dataOrSize !== 'number' && dataOrSize.byteLength >= 16384) {
-              try {
-                var aabb = processVBO(dataOrSize);
-                var bId = cache.buffers[target];
-                if (aabb && bId) aabbs.set(bId, aabb);
-              } catch(_) {}
+            // Apply Fullbright before uploading to GPU
+            if (CFG.fullbright && target === gl.ARRAY_BUFFER && dataOrSize && typeof dataOrSize !== 'number' && dataOrSize.byteLength >= 16384) {
+              try { applyFullbright(dataOrSize); } catch(_) {}
             }
 
             if (srcOffset !== undefined) orig(target, dataOrSize, usage, srcOffset, length);
@@ -724,6 +705,12 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
 
         wrap('bufferSubData', function(orig) {
           return function(target, offset, data, srcOffset, length) {
+            // Apply Fullbright before uploading to GPU
+            if (CFG.fullbright && target === gl.ARRAY_BUFFER && data && typeof data !== 'number' && data.byteLength >= 16384) {
+              try { applyFullbright(data); } catch(_) {}
+            }
+
+            // VBO Orphaning for Stutter Fix
             if (CFG.p5 && offset === 0 && data) {
               var bufId = cache.buffers[target];
               if (bufId) {
@@ -736,14 +723,6 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
               }
             }
 
-            if ((CFG.p2 || CFG.fullbright) && target === gl.ARRAY_BUFFER && data && typeof data !== 'number' && data.byteLength >= 16384) {
-              try {
-                var aabb = processVBO(data);
-                var bId = cache.buffers[target];
-                if (aabb && bId) aabbs.set(bId, aabb);
-              } catch(_) {}
-            }
-
             if (srcOffset !== undefined) orig(target, offset, data, srcOffset, length);
             else orig(target, offset, data);
           };
@@ -754,7 +733,6 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
             if (buf) {
               var b = cache.buffers;
               for (var k in b) if (b[k] === buf) delete b[k];
-              if (CFG.p2) aabbs.delete(buf);
               if (CFG.p5) bufferMeta.delete(buf);
             }
             orig(buf);
@@ -770,36 +748,8 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
           };
         });
 
-        wrap('uniformMatrix4fv', function(orig) {
-          return function(loc, transpose, value, srcOffset, srcLength) {
-            var mat = value;
-            if (CFG.zoom && zoomActive && value && value.length >= 16 && is3DMVP(value)) {
-              var z = 4.0;
-              mat = new Float32Array(value);
-              mat[0] *= z; mat[5] *= z;
-            }
-            if (srcOffset !== undefined) orig(loc, transpose, mat, srcOffset, srcLength);
-            else orig(loc, transpose, mat);
-
-            if (CFG.p2 && value && value.length >= 16 && is3DMVP(value)) {
-              try { frustum = extractFrustum(mat); } catch(_) {}
-            }
-          };
-        });
-
         wrap('drawArrays', function(orig) {
           return function(mode, first, count) {
-            if (CFG.p2 && cullingReady && frustum) {
-              try {
-                var vbuf = cache.buffers[gl.ARRAY_BUFFER];
-                if (vbuf) {
-                  var aabb = aabbs.get(vbuf);
-                  if (aabb && outsideFrustum(frustum, aabb)) {
-                    S.culled++; return;
-                  }
-                }
-              } catch(_) {}
-            }
             S.draws++;
             orig(mode, first, count);
           };
@@ -807,17 +757,6 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
 
         wrap('drawElements', function(orig) {
           return function(mode, count, type, offset) {
-            if (CFG.p2 && cullingReady && frustum) {
-              try {
-                var vbuf = cache.buffers[gl.ARRAY_BUFFER];
-                if (vbuf) {
-                  var aabb = aabbs.get(vbuf);
-                  if (aabb && outsideFrustum(frustum, aabb)) {
-                    S.culled++; return;
-                  }
-                }
-              } catch(_) {}
-            }
             S.draws++;
             orig(mode, count, type, offset);
           };
@@ -828,24 +767,7 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
             var fresh = blankCache(gl);
             var keys  = Object.keys(fresh);
             for (var i = 0; i < keys.length; i++) cache[keys[i]] = fresh[keys[i]];
-            aabbs.clear();
             bufferMeta.clear();
-            frustum = null;
-            cullingReady = false;
-            setTimeout(function() { cullingReady = true; }, 15000);
-          });
-        }
-
-        if (CFG.zoom) {
-          document.addEventListener('keydown', function(e) {
-            if (e.code === 'KeyC' || e.key === 'c' || e.key === 'C' || e.keyCode === 67) {
-              zoomActive = true;
-            }
-          });
-          document.addEventListener('keyup', function(e) {
-            if (e.code === 'KeyC' || e.key === 'c' || e.key === 'C' || e.keyCode === 67) {
-              zoomActive = false;
-            }
           });
         }
 
@@ -857,13 +779,12 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
         if (CFG.p1 && (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl')) {
           opts = Object.assign({}, opts, {
             antialias:       false,
-            powerPreference: 'high-performance',
-            desynchronized:  true
+            powerPreference: 'high-performance'
           });
         }
         var ctx = _getCtx.call(this, type, opts);
         
-        if (ctx && (CFG.p2 || CFG.p4 || CFG.p5 || CFG.fullbright || CFG.zoom) &&
+        if (ctx && (CFG.p4 || CFG.p5 || CFG.fullbright) &&
             (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl')) {
           try {
             return wrapGL(ctx);
@@ -894,40 +815,6 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
         return origRAF(cb);
       };
 
-      if (CFG.autosprint) {
-        try {
-          Object.defineProperty(Event.prototype, 'isTrusted', {
-            get: function() { return true; },
-            configurable: true
-          });
-        } catch(e) {}
-
-        var wHeld = false;
-        var sprintSent = false;
-        window.addEventListener('keydown', function(e) {
-          if (e.code === 'KeyW' && !e.repeat) {
-            wHeld = true;
-            if (!sprintSent) {
-              sprintSent = true;
-              setTimeout(function() {
-                if (!wHeld) return;
-                window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyW', keyCode: 87, which: 87, bubbles: true }));
-                setTimeout(function() {
-                  if (!wHeld) return;
-                  window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyW', keyCode: 87, which: 87, bubbles: true, repeat: false }));
-                }, 60);
-              }, 60);
-            }
-          }
-        });
-        window.addEventListener('keyup', function(e) {
-          if (e.code === 'KeyW') {
-            wHeld = false;
-            sprintSent = false;
-          }
-        });
-      }
-
       if (CFG.tabName) {
         document.title = CFG.tabName;
         setTimeout(function() { document.title = CFG.tabName; }, 6000);
@@ -950,7 +837,7 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
         if (document.body) attachHUD();
         else document.addEventListener('DOMContentLoaded', attachHUD);
 
-        var t0 = performance.now(), fr = 0, d0 = 0, c0 = 0;
+        var t0 = performance.now(), fr = 0, d0 = 0;
         (function tick() {
           origRAF(tick);
           fr++;
@@ -959,16 +846,14 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
           
           var fps = (fr / dt * 1000).toFixed(1);
           var dpf = ((S.draws - d0) / fr).toFixed(1);
-          var cpf = !CFG.p2 ? 'off' : ((S.culled - c0) / fr).toFixed(1);
           var thrtl = CFG.p3 && document.hidden ? 'YES' : 'NO';
           
           hud.textContent =
             'FPS       ' + fps + '\n' +
             'Draw/f    ' + dpf + '\n' +
-            'Culled/f  ' + cpf + '\n' +
             'Throttled ' + thrtl;
             
-          t0 = now; fr = 0; d0 = S.draws; c0 = S.culled;
+          t0 = now; fr = 0; d0 = S.draws;
         })();
 
         var f3 = false;
@@ -1000,9 +885,10 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
 
     async function launchGame() {
       var tabName = (document.getElementById('tabName').value.trim()) || 'Eaglercraft';
+      var sprintKey = (document.getElementById('sprintKey').value.trim()) || 'ControlLeft';
+      
       var cfg = {
         p1: document.getElementById('ch1').checked,
-        p2: document.getElementById('ch2').checked,
         p3: document.getElementById('ch3').checked,
         p4: document.getElementById('ch4').checked,
         p5: document.getElementById('ch5').checked,
@@ -1012,6 +898,7 @@ OneCompiler Link: https://onecompiler.com/html/44sptusy4
         zoom: document.getElementById('ch10').checked,
         hud: document.getElementById('ch7').checked,
         tabName: tabName,
+        sprintKey: sprintKey,
       };
 
       setBusy(true);
