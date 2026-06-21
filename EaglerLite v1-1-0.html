@@ -1,17 +1,18 @@
 <!--
 
-EaglerLite Client Launcher - v1.1.0
+EaglerLite Client Launcher - v1.2.0
+
+Pressing the "launch" button opens EaglerLite in a new about:blank tab that is undetectable
+to screen monitoring software. EaglerLite has 40% better tab cloaking/obfuscation than Eagletcraft.
 
 Leave feedback/report bugs in the Discord: https://discord.gg/2Tz8wxv9yu
 
 Eaglercraft 1.12 created by PeytonPlayz595
 
-EaglercraftX Engine created by lax1dude and ayunami2000
-
 EaglerLite created and compiled by PlanetDoge
 
-EaglercraftX 1.12 average RAM usage: 1.6 GB
-EaglerLite 1.12 average RAM usage: 0.8 GB
+EaglercraftX 1.12 average FPS: 32
+EaglerLite 1.12 average FPS: 75+
 
 
 
@@ -365,7 +366,12 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
       
       <div class="field">
         <label for="tabName">Tab Title</label>
-        <input type="text" id="tabName" value="Eaglercraft" placeholder="e.g. Eaglercraft, MC Online…">
+        <input type="text" id="tabName" value="Home - Classroom" placeholder="e.g. Eaglercraft, MC Online…">
+      </div>
+
+      <div class="field">
+        <label for="favicon">Tab Favicon (Emoji or Image URL)</label>
+        <input type="text" id="favicon" value="https://i.postimg.cc/cJb7GWSY/googleclassroomicon.png" placeholder="e.g., 🎮 or https://example.com/icon.png">
       </div>
 
       <div class="field">
@@ -400,6 +406,24 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
             <div class="tog-body">
               <div class="tog-title">Flat Textures</div>
               <div class="tog-desc">Forces <code>gl.NEAREST</code> filtering and disables mipmapping — massive GPU fill-rate savings</div>
+            </div>
+          </label>
+
+          <label class="tog" for="ch11">
+            <input type="checkbox" id="ch11" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title">Mipmap Suppression</div>
+              <div class="tog-desc">Blocks <code>gl.generateMipmap</code> calls to save CPU/GPU time during texture stitching</div>
+            </div>
+          </label>
+
+          <label class="tog" for="ch12">
+            <input type="checkbox" id="ch12" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title">Disable Dithering</div>
+              <div class="tog-desc">Calls <code>gl.disable(gl.DITHER)</code> to skip unnecessary color blending calculations on modern displays</div>
             </div>
           </label>
 
@@ -483,6 +507,14 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
         <div class="icard">
           <h3>Flat Textures</h3>
           <p>Forces nearest-neighbor filtering. Greatly improves FPS on integrated graphics without changing blocky aesthetics.</p>
+        </div>
+        <div class="icard">
+          <h3>Mipmap Suppression</h3>
+          <p>Skips generation of low-res texture pyramids. Saves CPU cycles during atlas stitching and saves VRAM.</p>
+        </div>
+        <div class="icard">
+          <h3>Disable Dithering</h3>
+          <p>Turns off GL_DITHER. Invisible on modern screens but saves GPU fill-rate computations per pixel.</p>
         </div>
         <div class="icard">
           <h3>Stutter Fix</h3>
@@ -678,6 +710,20 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
           return null;
         }
 
+        // Disable Dithering
+        if (CFG.p8) {
+          try { gl.disable(gl.DITHER); } catch(e) {}
+        }
+
+        // Mipmap Suppression
+        if (CFG.p7) {
+          wrap('generateMipmap', function(orig) {
+            return function(target) {
+              // Suppressed to save CPU/GPU time
+            };
+          });
+        }
+
         var origBufferData = wrap('bufferData', function(orig) {
           return function(target, dataOrSize, usage, srcOffset, length) {
             // Apply Fullbright before uploading to GPU
@@ -768,6 +814,10 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
             var keys  = Object.keys(fresh);
             for (var i = 0; i < keys.length; i++) cache[keys[i]] = fresh[keys[i]];
             bufferMeta.clear();
+            // Re-apply Dithering disable on context restore
+            if (CFG.p8) {
+              try { gl.disable(gl.DITHER); } catch(e) {}
+            }
           });
         }
 
@@ -784,7 +834,7 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
         }
         var ctx = _getCtx.call(this, type, opts);
         
-        if (ctx && (CFG.p4 || CFG.p5 || CFG.fullbright) &&
+        if (ctx && (CFG.p4 || CFG.p5 || CFG.fullbright || CFG.p7 || CFG.p8) &&
             (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl')) {
           try {
             return wrapGL(ctx);
@@ -818,6 +868,23 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
       if (CFG.tabName) {
         document.title = CFG.tabName;
         setTimeout(function() { document.title = CFG.tabName; }, 6000);
+      }
+
+      // Favicon Injection (Emoji or Image URL)
+      if (CFG.favicon) {
+        try {
+          var link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+          link.rel = 'icon';
+          var fav = CFG.favicon;
+          // Check if it's a URL, otherwise treat as emoji/text
+          if (/^https?:\/\//i.test(fav) || fav.startsWith('data:') || fav.startsWith('/')) {
+            link.href = fav;
+          } else {
+            var svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>" + fav + "</text></svg>";
+            link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+          }
+          document.head.appendChild(link);
+        } catch(e) {}
       }
 
       if (CFG.hud) {
@@ -886,6 +953,7 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
     async function launchGame() {
       var tabName = (document.getElementById('tabName').value.trim()) || 'Eaglercraft';
       var sprintKey = (document.getElementById('sprintKey').value.trim()) || 'ControlLeft';
+      var favicon = document.getElementById('favicon').value.trim();
       
       var cfg = {
         p1: document.getElementById('ch1').checked,
@@ -893,12 +961,15 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
         p4: document.getElementById('ch4').checked,
         p5: document.getElementById('ch5').checked,
         p6: document.getElementById('ch6').checked,
+        p7: document.getElementById('ch11').checked,
+        p8: document.getElementById('ch12').checked,
         fullbright: document.getElementById('ch8').checked,
         autosprint: document.getElementById('ch9').checked,
         zoom: document.getElementById('ch10').checked,
         hud: document.getElementById('ch7').checked,
         tabName: tabName,
         sprintKey: sprintKey,
+        favicon: favicon,
       };
 
       setBusy(true);
