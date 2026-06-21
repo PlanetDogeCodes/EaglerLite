@@ -1,6 +1,6 @@
 <!--
 
-EaglerLite Client Launcher - v1.2.1
+EaglerLite Client Launcher - v1.2.2
 
 Pressing the "launch" button opens EaglerLite in a new about:blank tab that is undetectable
 to screen monitoring software. EaglerLite has 40% better tab cloaking/obfuscation than Eagletcraft.
@@ -583,32 +583,43 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
         return row.content;
       }
 
-      var response = await fetch(url);
-      if (!response.ok) throw new Error('HTTP ' + response.status);
+      var lastError = null;
+      for (var attempt = 0; attempt < 3; attempt++) {
+        try {
+          var response = await fetch(url);
+          if (!response.ok) throw new Error('HTTP ' + response.status);
 
-      var total  = +response.headers.get('Content-Length') || 0;
-      var reader = response.body.getReader();
-      var parts  = [];
-      var loaded = 0;
+          var total  = +response.headers.get('Content-Length') || 0;
+          var reader = response.body.getReader();
+          var parts  = [];
+          var loaded = 0;
 
-      for (;;) {
-        var chunk = await reader.read();
-        if (chunk.done) break;
-        parts.push(chunk.value);
-        loaded += chunk.value.length;
-        if (total) onProgress(Math.min(0.9, loaded / total));
+          for (;;) {
+            var chunk = await reader.read();
+            if (chunk.done) break;
+            parts.push(chunk.value);
+            loaded += chunk.value.length;
+            if (total) onProgress(Math.min(0.9, loaded / total));
+          }
+          onProgress(0.95);
+
+          var text = await new Blob(parts).text();
+          onProgress(1);
+
+          try {
+            var tx = db.transaction(STORE, 'readwrite');
+            tx.objectStore(STORE).put({ url: url, content: text, ts: Date.now() });
+          } catch(_) {}
+
+          return text;
+        } catch(e) {
+          lastError = e;
+          // Wait 1s, then 2s, then 3s before retrying
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+        }
       }
-      onProgress(0.95);
-
-      var text = await new Blob(parts).text();
-      onProgress(1);
-
-      try {
-        var tx = db.transaction(STORE, 'readwrite');
-        tx.objectStore(STORE).put({ url: url, content: text, ts: Date.now() });
-      } catch(_) {}
-
-      return text;
+      
+      throw lastError || new Error('Download failed after multiple retries.');
     }
 
     function EaglerLiteOptimizer(CFG) {
