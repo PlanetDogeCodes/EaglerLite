@@ -1,6 +1,6 @@
 <!--
 
-EaglerLite Client Launcher - v1.2.0
+EaglerLite Client Launcher - v1.2.1
 
 Pressing the "launch" button opens EaglerLite in a new about:blank tab that is undetectable
 to screen monitoring software. EaglerLite has 40% better tab cloaking/obfuscation than Eagletcraft.
@@ -785,10 +785,19 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
           };
         });
 
+        // Safe Texture Filtering (P4 Flat Textures & P7 Mipmap Suppression)
         wrap('texParameteri', function(orig) {
           return function(target, pname, param) {
-            if (CFG.p4 && (pname === gl.TEXTURE_MIN_FILTER || pname === gl.TEXTURE_MAG_FILTER)) {
-              param = gl.NEAREST;
+            if (pname === gl.TEXTURE_MIN_FILTER || pname === gl.TEXTURE_MAG_FILTER) {
+              if (CFG.p4) {
+                param = gl.NEAREST;
+              } else if (CFG.p7 && pname === gl.TEXTURE_MIN_FILTER) {
+                // If suppressing mipmaps but P4 is off, strip mipmap filters to prevent incomplete textures (black screens)
+                if (param === gl.NEAREST_MIPMAP_NEAREST || param === gl.LINEAR_MIPMAP_NEAREST || 
+                    param === gl.NEAREST_MIPMAP_LINEAR || param === gl.LINEAR_MIPMAP_LINEAR) {
+                  param = gl.LINEAR; 
+                }
+              }
             }
             orig(target, pname, param);
           };
