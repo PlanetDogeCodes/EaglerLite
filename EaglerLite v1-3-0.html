@@ -1,6 +1,6 @@
 <!--
 
-EaglerLite Client Launcher - v1.2.2
+EaglerLite Client Launcher - v1.3.0
 
 Pressing the "launch" button opens EaglerLite in a new about:blank tab that is undetectable
 to screen monitoring software. EaglerLite has 40% better tab cloaking/obfuscation than Eagletcraft.
@@ -366,7 +366,7 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
       
       <div class="field">
         <label for="tabName">Tab Title</label>
-        <input type="text" id="tabName" value="Home - Classroom" placeholder="e.g. Eaglercraft, MC Online…">
+        <input type="text" id="tabName" value="Eaglercraft" placeholder="e.g. Eaglercraft, MC Online…">
       </div>
 
       <div class="field">
@@ -442,6 +442,33 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
             <div class="tog-body">
               <div class="tog-title">Uncap FPS</div>
               <div class="tog-desc">Overrides <code>requestAnimationFrame</code> to bypass the browser's 60Hz V-Sync cap</div>
+            </div>
+          </label>
+
+          <label class="tog" for="ch13">
+            <input type="checkbox" id="ch13" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title">Audio Thread Offloading</div>
+              <div class="tog-desc">Requests <code>latencyHint: 'playback'</code> for the Web Audio API to reduce CPU usage</div>
+            </div>
+          </label>
+
+          <label class="tog" for="ch14">
+            <input type="checkbox" id="ch14" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title">Disable Colorspace Conversion</div>
+              <div class="tog-desc">Forces <code>UNPACK_COLORSPACE_CONVERSION_WEBGL</code> to NONE to skip OS-level color math on textures</div>
+            </div>
+          </label>
+
+          <label class="tog" for="ch15">
+            <input type="checkbox" id="ch15" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title">Suppress GL Error Checking</div>
+              <div class="tog-desc">Bypasses <code>gl.getError()</code> queries to prevent the CPU from stalling while waiting for the GPU</div>
             </div>
           </label>
         </div>
@@ -523,6 +550,18 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
         <div class="icard">
           <h3>Uncap FPS</h3>
           <p>Bypasses browser V-Sync using <code>MessageChannel</code> to allow 100-300+ FPS without micro-stuttering.</p>
+        </div>
+        <div class="icard">
+          <h3>Audio Offloading</h3>
+          <p>Tells the browser to prioritize smooth audio playback over low latency, saving main thread CPU cycles.</p>
+        </div>
+        <div class="icard">
+          <h3>No Colorspace Conversion</h3>
+          <p>Skips OS-level sRGB math during <code>texImage2D</code>. Speeds up atlas stitching and texture loading.</p>
+        </div>
+        <div class="icard">
+          <h3>Suppress GL Errors</h3>
+          <p>Bypasses <code>getError()</code> queries. Prevents the CPU from stalling while synchronizing with the GPU.</p>
         </div>
       </div>
     </details>
@@ -614,7 +653,6 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
           return text;
         } catch(e) {
           lastError = e;
-          // Wait 1s, then 2s, then 3s before retrying
           await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
         }
       }
@@ -637,6 +675,21 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
       } catch(e) {}
 
       var S = { draws: 0 };
+
+      // Audio Thread Offloading
+      if (CFG.p9) {
+        var origAudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (origAudioCtx) {
+          window.AudioContext = function() {
+            try {
+              return new origAudioContext({ latencyHint: 'playback' });
+            } catch(e) {
+              return new origAudioCtx();
+            }
+          };
+          if (window.webkitAudioContext) window.webkitAudioContext = window.AudioContext;
+        }
+      }
 
       // Zoom: Pure CSS Canvas Scaling
       if (CFG.zoom) {
@@ -724,6 +777,28 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
         // Disable Dithering
         if (CFG.p8) {
           try { gl.disable(gl.DITHER); } catch(e) {}
+        }
+
+        // Disable Colorspace Conversion
+        if (CFG.p10) {
+          try { gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE); } catch(e) {}
+          wrap('pixelStorei', function(orig) {
+            return function(pname, param) {
+              if (pname === gl.UNPACK_COLORSPACE_CONVERSION_WEBGL) {
+                param = gl.NONE;
+              }
+              orig(pname, param);
+            };
+          });
+        }
+
+        // Suppress GL Error Checking
+        if (CFG.p11) {
+          wrap('getError', function(orig) {
+            return function() {
+              return 0; // gl.NO_ERROR
+            };
+          });
         }
 
         // Mipmap Suppression
@@ -834,9 +909,12 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
             var keys  = Object.keys(fresh);
             for (var i = 0; i < keys.length; i++) cache[keys[i]] = fresh[keys[i]];
             bufferMeta.clear();
-            // Re-apply Dithering disable on context restore
+            // Re-apply Dithering and Colorspace disable on context restore
             if (CFG.p8) {
               try { gl.disable(gl.DITHER); } catch(e) {}
+            }
+            if (CFG.p10) {
+              try { gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE); } catch(e) {}
             }
           });
         }
@@ -854,7 +932,7 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
         }
         var ctx = _getCtx.call(this, type, opts);
         
-        if (ctx && (CFG.p4 || CFG.p5 || CFG.fullbright || CFG.p7 || CFG.p8) &&
+        if (ctx && (CFG.p4 || CFG.p5 || CFG.fullbright || CFG.p7 || CFG.p8 || CFG.p10 || CFG.p11) &&
             (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl')) {
           try {
             return wrapGL(ctx);
@@ -983,6 +1061,9 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
         p6: document.getElementById('ch6').checked,
         p7: document.getElementById('ch11').checked,
         p8: document.getElementById('ch12').checked,
+        p9: document.getElementById('ch13').checked,
+        p10: document.getElementById('ch14').checked,
+        p11: document.getElementById('ch15').checked,
         fullbright: document.getElementById('ch8').checked,
         autosprint: document.getElementById('ch9').checked,
         zoom: document.getElementById('ch10').checked,
