@@ -1,6 +1,6 @@
 <!--
 
-EaglerLite Client Launcher - v1.3.0
+EaglerLite Client Launcher - v1.4.0
 
 Pressing the "launch" button opens EaglerLite in a new about:blank tab that is undetectable
 to screen monitoring software. EaglerLite has 40% better tab cloaking/obfuscation than Eagletcraft.
@@ -366,7 +366,7 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
       
       <div class="field">
         <label for="tabName">Tab Title</label>
-        <input type="text" id="tabName" value="Eaglercraft" placeholder="e.g. Eaglercraft, MC Online…">
+        <input type="text" id="tabName" value="Home - Classroom" placeholder="e.g. Eaglercraft, MC Online…">
       </div>
 
       <div class="field">
@@ -471,6 +471,33 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
               <div class="tog-desc">Bypasses <code>gl.getError()</code> queries to prevent the CPU from stalling while waiting for the GPU</div>
             </div>
           </label>
+
+          <label class="tog" for="ch16">
+            <input type="checkbox" id="ch16" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title">Disable Line Smoothing</div>
+              <div class="tog-desc">Calls <code>gl.disable(gl.LINE_SMOOTH)</code> to prevent expensive edge-blending on block selection outlines</div>
+            </div>
+          </label>
+
+          <label class="tog" for="ch17">
+            <input type="checkbox" id="ch17" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title">Force Single-Sampled Renderbuffers</div>
+              <div class="tog-desc">Downgrades <code>renderbufferStorageMultisample</code> to 1x to save VRAM and avoid offscreen MSAA resolving</div>
+            </div>
+          </label>
+
+          <label class="tog" for="ch18">
+            <input type="checkbox" id="ch18" checked>
+            <span class="tog-sw"></span>
+            <div class="tog-body">
+              <div class="tog-title">CSS Canvas Compositing</div>
+              <div class="tog-desc">Applies <code>will-change: transform</code> and <code>image-rendering: pixelated</code> to promote the canvas to a dedicated GPU layer</div>
+            </div>
+          </label>
         </div>
       </details>
 
@@ -563,6 +590,18 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
           <h3>Suppress GL Errors</h3>
           <p>Bypasses <code>getError()</code> queries. Prevents the CPU from stalling while synchronizing with the GPU.</p>
         </div>
+        <div class="icard">
+          <h3>Disable Line Smoothing</h3>
+          <p>Turns off <code>LINE_SMOOTH</code>. Saves GPU edge-blending calculations on wireframes and block outlines.</p>
+        </div>
+        <div class="icard">
+          <h3>Single-Sampled FBOs</h3>
+          <p>Forces <code>renderbufferStorage</code> over Multisample. Saves VRAM and skips offscreen MSAA resolving.</p>
+        </div>
+        <div class="icard">
+          <h3>CSS Canvas Compositing</h3>
+          <p>Promotes the canvas to a dedicated GPU layer. Skips OS-level CSS smoothing and compositing math.</p>
+        </div>
       </div>
     </details>
 
@@ -653,7 +692,9 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
           return text;
         } catch(e) {
           lastError = e;
-          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+          if (attempt < 2) {
+            await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+          }
         }
       }
       
@@ -676,18 +717,20 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
 
       var S = { draws: 0 };
 
-      // Audio Thread Offloading
+      // Audio Thread Offloading (Safely inherits prototype)
       if (CFG.p9) {
         var origAudioCtx = window.AudioContext || window.webkitAudioContext;
         if (origAudioCtx) {
-          window.AudioContext = function() {
+          var WrappedAudioContext = function() {
             try {
               return new origAudioContext({ latencyHint: 'playback' });
             } catch(e) {
               return new origAudioCtx();
             }
           };
-          if (window.webkitAudioContext) window.webkitAudioContext = window.AudioContext;
+          WrappedAudioContext.prototype = origAudioCtx.prototype;
+          window.AudioContext = WrappedAudioContext;
+          if (window.webkitAudioContext) window.webkitAudioContext = WrappedAudioContext;
         }
       }
 
@@ -710,17 +753,17 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
         });
       }
 
-      // AutoSprint: Custom Keybind Injection
+      // AutoSprint: Custom Keybind Injection dispatched to document
       if (CFG.autosprint) {
         var sprintCode = CFG.sprintKey || 'ControlLeft';
         window.addEventListener('keydown', function(e) {
           if ((e.code === 'KeyW' || e.keyCode === 87) && !e.repeat) {
-            window.dispatchEvent(new KeyboardEvent('keydown', { code: sprintCode, bubbles: true }));
+            document.dispatchEvent(new KeyboardEvent('keydown', { code: sprintCode, bubbles: true }));
           }
         });
         window.addEventListener('keyup', function(e) {
           if (e.code === 'KeyW' || e.keyCode === 87) {
-            window.dispatchEvent(new KeyboardEvent('keyup', { code: sprintCode, bubbles: true }));
+            document.dispatchEvent(new KeyboardEvent('keyup', { code: sprintCode, bubbles: true }));
           }
         });
       }
@@ -774,9 +817,31 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
           return null;
         }
 
-        // Disable Dithering
-        if (CFG.p8) {
-          try { gl.disable(gl.DITHER); } catch(e) {}
+        // Disable Dithering & Line Smoothing
+        if (CFG.p8 || CFG.p12) {
+          try {
+            if (CFG.p8) gl.disable(gl.DITHER);
+            if (CFG.p12 && typeof gl.LINE_SMOOTH !== 'undefined') gl.disable(gl.LINE_SMOOTH);
+          } catch(e) {}
+        }
+
+        // CSS Canvas Compositing Tuning
+        if (CFG.p14 && gl.canvas && gl.canvas.style) {
+          gl.canvas.style.willChange = 'transform';
+          gl.canvas.style.imageRendering = 'pixelated';
+        }
+
+        // Force Single-Sampled Renderbuffers
+        if (CFG.p13 && typeof gl.renderbufferStorageMultisample === 'function') {
+          wrap('renderbufferStorageMultisample', function(orig) {
+            return function(target, samples, internalformat, width, height) {
+              try {
+                gl.renderbufferStorage(target, internalformat, width, height);
+              } catch(e) {
+                orig(target, samples, internalformat, width, height);
+              }
+            };
+          });
         }
 
         // Disable Colorspace Conversion
@@ -909,12 +974,15 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
             var keys  = Object.keys(fresh);
             for (var i = 0; i < keys.length; i++) cache[keys[i]] = fresh[keys[i]];
             bufferMeta.clear();
-            // Re-apply Dithering and Colorspace disable on context restore
+            // Re-apply states on context restore
             if (CFG.p8) {
               try { gl.disable(gl.DITHER); } catch(e) {}
             }
             if (CFG.p10) {
               try { gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE); } catch(e) {}
+            }
+            if (CFG.p12 && typeof gl.LINE_SMOOTH !== 'undefined') {
+              try { gl.disable(gl.LINE_SMOOTH); } catch(e) {}
             }
           });
         }
@@ -932,7 +1000,7 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
         }
         var ctx = _getCtx.call(this, type, opts);
         
-        if (ctx && (CFG.p4 || CFG.p5 || CFG.fullbright || CFG.p7 || CFG.p8 || CFG.p10 || CFG.p11) &&
+        if (ctx && (CFG.p4 || CFG.p5 || CFG.fullbright || CFG.p7 || CFG.p8 || CFG.p10 || CFG.p11 || CFG.p12 || CFG.p13 || CFG.p14) &&
             (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl')) {
           try {
             return wrapGL(ctx);
@@ -1064,6 +1132,9 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
         p9: document.getElementById('ch13').checked,
         p10: document.getElementById('ch14').checked,
         p11: document.getElementById('ch15').checked,
+        p12: document.getElementById('ch16').checked,
+        p13: document.getElementById('ch17').checked,
+        p14: document.getElementById('ch18').checked,
         fullbright: document.getElementById('ch8').checked,
         autosprint: document.getElementById('ch9').checked,
         zoom: document.getElementById('ch10').checked,
