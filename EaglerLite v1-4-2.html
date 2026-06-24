@@ -1,6 +1,6 @@
 <!--
 
-EaglerLite Client Launcher - v1.4.1
+EaglerLite Client Launcher - v1.4.2
 
 Pressing the "launch" button opens EaglerLite in a new about:blank tab that is undetectable
 to screen monitoring software. EaglerLite has 40% better tab cloaking/obfuscation than Eagletcraft.
@@ -706,15 +706,20 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
 
       var S = { draws: 0 };
 
-      // Audio Thread Offloading (Safely inherits prototype)
+      // Audio Thread Offloading (Safely inherits prototype and merges options)
       if (CFG.p9) {
         var origAudioCtx = window.AudioContext || window.webkitAudioContext;
         if (origAudioCtx) {
-          var WrappedAudioContext = function() {
+          var WrappedAudioContext = function(opts) {
+            var finalOpts = Object.assign({}, opts || {}, { latencyHint: 'playback' });
             try {
-              return new origAudioContext({ latencyHint: 'playback' });
+              return new origAudioCtx(finalOpts);
             } catch(e) {
-              return new origAudioCtx();
+              try {
+                return new origAudioCtx(opts);
+              } catch(e2) {
+                return new origAudioCtx();
+              }
             }
           };
           WrappedAudioContext.prototype = origAudioCtx.prototype;
@@ -727,7 +732,8 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
       if (CFG.zoom) {
         var gameCanvas = null;
         function applyZoom(on) {
-          if (!gameCanvas) gameCanvas = document.querySelector('canvas');
+          // Check isConnected to ensure we grab the active canvas if context was lost/restored
+          if (!gameCanvas || !gameCanvas.isConnected) gameCanvas = document.querySelector('canvas');
           if (gameCanvas) {
             gameCanvas.style.transform = on ? "scale(4)" : "scale(1)";
             gameCanvas.style.transformOrigin = "center center";
@@ -745,8 +751,12 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
       // AutoSprint: Custom Keybind Injection dispatched to document
       if (CFG.autosprint) {
         var sprintCode = CFG.sprintKey || 'ControlLeft';
+        var sprintKeyCode = 17;
+        if (sprintCode === 'ShiftLeft' || sprintCode === 'ShiftRight') sprintKeyCode = 16;
+        else if (sprintCode === 'AltLeft' || sprintCode === 'AltRight') sprintKeyCode = 18;
+        
         function sendSprintEvent(type) {
-          var ev = new KeyboardEvent(type, { code: sprintCode, bubbles: true });
+          var ev = new KeyboardEvent(type, { code: sprintCode, keyCode: sprintKeyCode, which: sprintKeyCode, bubbles: true });
           // Safely bypass isTrusted on the specific instance without breaking global browser security
           try {
             Object.defineProperty(ev, 'isTrusted', { get: function() { return true; }, configurable: true });
@@ -853,10 +863,13 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
           });
         }
 
-        // Suppress GL Error Checking
+        // Suppress GL Error Checking (Safe context loss checking)
         if (CFG.p11) {
           wrap('getError', function(orig) {
             return function() {
+              if (gl.isContextLost()) {
+                return 9; // CONTEXT_LOST_WEBGL
+              }
               return 0; // gl.NO_ERROR
             };
           });
