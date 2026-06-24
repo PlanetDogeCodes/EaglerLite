@@ -1,6 +1,6 @@
 <!--
 
-EaglerLite Client Launcher - v1.4.0
+EaglerLite Client Launcher - v1.4.1
 
 Pressing the "launch" button opens EaglerLite in a new about:blank tab that is undetectable
 to screen monitoring software. EaglerLite has 40% better tab cloaking/obfuscation than Eagletcraft.
@@ -495,7 +495,7 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
             <span class="tog-sw"></span>
             <div class="tog-body">
               <div class="tog-title">CSS Canvas Compositing</div>
-              <div class="tog-desc">Applies <code>will-change: transform</code> and <code>image-rendering: pixelated</code> to promote the canvas to a dedicated GPU layer</div>
+              <div class="tog-desc">Applies <code>image-rendering: pixelated</code> to skip OS-level CSS smoothing when scaling the canvas</div>
             </div>
           </label>
         </div>
@@ -600,7 +600,7 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
         </div>
         <div class="icard">
           <h3>CSS Canvas Compositing</h3>
-          <p>Promotes the canvas to a dedicated GPU layer. Skips OS-level CSS smoothing and compositing math.</p>
+          <p>Applies pixelated rendering to the canvas. Skips OS-level CSS smoothing and compositing math.</p>
         </div>
       </div>
     </details>
@@ -704,17 +704,6 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
     function EaglerLiteOptimizer(CFG) {
       'use strict';
 
-      // Global isTrusted bypass for synthetic events
-      try {
-        var props = [Event.prototype, UIEvent.prototype, KeyboardEvent.prototype];
-        for (var i = 0; i < props.length; i++) {
-          Object.defineProperty(props[i], 'isTrusted', {
-            get: function() { return true; },
-            configurable: true
-          });
-        }
-      } catch(e) {}
-
       var S = { draws: 0 };
 
       // Audio Thread Offloading (Safely inherits prototype)
@@ -756,14 +745,22 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
       // AutoSprint: Custom Keybind Injection dispatched to document
       if (CFG.autosprint) {
         var sprintCode = CFG.sprintKey || 'ControlLeft';
+        function sendSprintEvent(type) {
+          var ev = new KeyboardEvent(type, { code: sprintCode, bubbles: true });
+          // Safely bypass isTrusted on the specific instance without breaking global browser security
+          try {
+            Object.defineProperty(ev, 'isTrusted', { get: function() { return true; }, configurable: true });
+          } catch(_) {}
+          document.dispatchEvent(ev);
+        }
         window.addEventListener('keydown', function(e) {
           if ((e.code === 'KeyW' || e.keyCode === 87) && !e.repeat) {
-            document.dispatchEvent(new KeyboardEvent('keydown', { code: sprintCode, bubbles: true }));
+            sendSprintEvent('keydown');
           }
         });
         window.addEventListener('keyup', function(e) {
           if (e.code === 'KeyW' || e.keyCode === 87) {
-            document.dispatchEvent(new KeyboardEvent('keyup', { code: sprintCode, bubbles: true }));
+            sendSprintEvent('keyup');
           }
         });
       }
@@ -825,9 +822,8 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
           } catch(e) {}
         }
 
-        // CSS Canvas Compositing Tuning
+        // CSS Canvas Compositing Tuning (Removed will-change to fix pointer lock hit-testing)
         if (CFG.p14 && gl.canvas && gl.canvas.style) {
-          gl.canvas.style.willChange = 'transform';
           gl.canvas.style.imageRendering = 'pixelated';
         }
 
@@ -1023,7 +1019,9 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
         if (document.hidden && CFG.p3) {
           return setTimeout(function() { cb(performance.now()); }, 1000);
         }
-        if (CFG.p6) {
+        // Only use the uncapped MessageChannel loop when the pointer is locked (in-game).
+        // This ensures native requestAnimationFrame is used for menus, keeping pointer lock requests valid.
+        if (CFG.p6 && document.pointerLockElement) {
           uncapQueue.push(cb);
           uncapChannel.port2.postMessage(0);
           return 0;
