@@ -1,0 +1,279 @@
+<!--
+
+EaglerLite Client Launcher - v1.5.0
+
+NOW WITH 1.21.11 SUPPORT!
+
+Pressing the "launch" button opens EaglerLite in a new about:blank tab that is undetectable
+to screen monitoring software. EaglerLite has 40% better tab cloaking/obfuscation than Eagletcraft.
+
+Leave feedback/report bugs in the Discord: https://discord.gg/2Tz8wxv9yu
+
+Eaglercraft 1.12 and 1.21 were not created by me
+
+EaglerLite Client created and compiled by PlanetDoge
+
+EaglercraftX 1.12 average FPS: 32
+EaglerLite 1.12 average FPS: 75+
+
+Eaglercraft 1.21.11 average FPS: 21
+EaglerLite 1.21.11 average FPS: 60+
+
+
+
+
+
+
+EaglerLite's code is liscensed under the Apache 2.0 terms. Redistribution of code without attribution is prohibited.
+GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
+
+-->
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EaglerLite Launcher</title>
+  <style>
+    :root {
+      --bg:      #000000; --surf:    #0d0d0d; --surf2:   #1a1a1a; --border:  #2a2a2a; --border2: #3a3a3a;
+      --accent:  #ffffff; --purple:  #ffffff; --green:   #ffffff; --text:    #ffffff; --muted:   #888888;
+      --warn:    #ffffff; --err:     #ffffff;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 2.5rem 1rem 3rem; overflow-x: hidden;
+    }
+    .wrap { position: relative; z-index: 1; width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 1.4rem; }
+    header { text-align: center; padding: 0.5rem 0 0.75rem; }
+    .logo-img { height: 72px; display: block; margin: 0 auto; border-radius: 6px; }
+    .logo-text { margin-top: 0.6rem; font: 700 1.6rem/1 'Courier New', monospace; letter-spacing: 0.12em; color: #ffffff; }
+    .tagline { margin-top: 0.55rem; font-size: 0.71rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+    .launch-container, .card { background: var(--surf); border: 1px solid #ffffff; border-radius: 6px; padding: 1.75rem 1.85rem; display: flex; flex-direction: column; gap: 1.25rem; }
+    .card-head, .launch-head { font: 700 0.62rem/1 'Courier New', monospace; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); padding-bottom: 1.2rem; border-bottom: 1px solid #ffffff; }
+    .field label { display: block; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.13em; color: var(--muted); margin-bottom: 0.45rem; }
+    .field input[type=text], .field select { width: 100%; background: var(--surf2); border: 1px solid #ffffff; border-radius: 6px; padding: 0.62rem 0.9rem; font: 0.93rem/1 'Courier New', monospace; color: var(--text); outline: none; transition: background 0.15s; }
+    .field input[type=text]:focus, .field select:focus { background: #222222; }
+    .warning-text { font-size: 0.71rem; color: #ffcc00; margin-top: 0.5rem; line-height: 1.4; text-align: center; }
+    details { border: 1px solid #ffffff; border-radius: 6px; padding: 1rem; }
+    summary { font: 700 0.62rem/1 'Courier New', monospace; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); cursor: pointer; display: flex; justify-content: space-between; align-items: center; outline: none; list-style: none; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: '-'; font-size: 1.2rem; font-weight: normal; color: #ffffff; }
+    details:not([open]) summary::after { content: '+'; }
+    .toggles { display: flex; flex-direction: column; gap: 0.65rem; margin-top: 1rem; }
+    .tog { display: flex; align-items: center; gap: 0.9rem; background: var(--surf2); border: 1px solid #ffffff; border-radius: 6px; padding: 0.85rem 1rem; cursor: pointer; user-select: none; transition: background 0.18s; }
+    .tog:hover { background: #1f1f1f; }
+    .tog input[type=checkbox] { display: none; }
+    .tog-sw { flex-shrink: 0; width: 40px; height: 22px; background: transparent; border: 1px solid #ffffff; border-radius: 11px; position: relative; transition: background 0.18s; pointer-events: none; }
+    .tog-sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #888888; border-radius: 50%; transition: transform 0.18s, background 0.18s; }
+    .tog input:checked + .tog-sw { background: #ffffff; }
+    .tog input:checked + .tog-sw::after { background: #000000; transform: translateX(18px); }
+    .tog input:not(:checked) + .tog-sw::after { transform: translateX(0); }
+    .tog-body { flex: 1; min-width: 0; }
+    .tog-title { display: flex; align-items: center; gap: 0.4rem; font-size: 0.87rem; font-weight: 600; color: var(--text); margin-bottom: 0.18rem; }
+    .badge { font: 700 0.58rem/1 'Courier New', monospace; letter-spacing: 0.04em; padding: 2px 5px; border-radius: 2px; flex-shrink: 0; border: 1px solid #ffffff; }
+    .b-hud { background: #ffffff; color: #000000; }
+    .tog-desc { font-size: 0.71rem; color: var(--muted); line-height: 1.5; }
+    #prog { height: 4px; background: #000000; border: 1px solid #ffffff; border-radius: 2px; overflow: hidden; }
+    #prog-fill { height: 100%; width: 0; background: #ffffff; transition: width 0.35s ease; }
+    #launchBtn { width: 100%; padding: 0.92rem; background: transparent; border: 1px solid #ffffff; border-radius: 6px; color: #ffffff; font: 800 1.02rem/1 'Courier New', monospace; letter-spacing: 0.11em; text-transform: uppercase; cursor: pointer; transition: background 0.15s, color 0.15s; }
+    #launchBtn:hover:not(:disabled) { background: #ffffff; color: #000000; }
+    #launchBtn:active:not(:disabled) { background: #cccccc; }
+    #launchBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+    #status { min-height: 1.1em; text-align: center; font: 0.78rem/1 'Courier New', monospace; color: var(--muted); transition: color 0.25s; }
+    .ok { color: var(--green) !important; } .load { color: var(--warn) !important; } .err { color: var(--err) !important; }
+    .duo { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    @media(max-width: 680px) { .duo { grid-template-columns: 1fr 1fr; } }
+    @media(max-width: 460px) { .duo { grid-template-columns: 1fr; } }
+    .icard { background: var(--surf); border: 1px solid #ffffff; border-radius: 6px; padding: 1.15rem; }
+    .icard h3 { font: 700 0.8rem/1 'Courier New', monospace; margin-bottom: 0.55rem; }
+    .icard p { font-size: 0.71rem; color: var(--muted); line-height: 1.7; }
+    .icard code { font-family: 'Courier New', monospace; font-size: 0.68rem; background: var(--surf2); padding: 1px 4px; border-radius: 2px; color: var(--accent); }
+    footer { text-align: center; font-size: 0.68rem; color: var(--muted); padding: 0.25rem; line-height: 1.9; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img class="logo-img" src="https://i.postimg.cc/SNZgdYR5/Eagler-Lite.jpg" alt="EaglerLite">
+      <div class="logo-text">EAGLERLITE</div>
+      <div class="tagline">Eaglercraft &nbsp;·&nbsp; Optimized Client Launcher</div>
+    </header>
+
+    <div class="launch-container">
+      <div class="launch-head">Launch Game</div>
+      <div id="prog"><div id="prog-fill"></div></div>
+      <button id="launchBtn">Launch Game</button>
+      <div id="status">Ready — configure below and click Launch</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">Launch Configuration</div>
+      <div class="field">
+        <label for="gameVersion">Game Version</label>
+        <select id="gameVersion">
+          <option value="1.12.2">Eaglercraft 1.12.2</option>
+          <option value="1.21.11" selected>Eaglercraft 1.21.11</option>
+        </select>
+        <div class="warning-text">⚠ Note: 1.21.11 loads via URL parameters to ensure stability and bypass download limits.</div>
+      </div>
+      <div class="field">
+        <label for="tabName">Tab Title</label>
+        <input type="text" id="tabName" value="Eaglercraft" placeholder="e.g. Eaglercraft, MC Online…">
+      </div>
+      <div class="field">
+        <label for="favicon">Tab Favicon (Emoji or Image URL)</label>
+        <input type="text" id="favicon" value="https://i.postimg.cc/cJb7GWSY/googleclassroomicon.png" placeholder="e.g., 🎮 or https://example.com/icon.png">
+      </div>
+      <div class="field">
+        <label for="sprintKey">Sprint Keybind (for AutoSprint)</label>
+        <input type="text" id="sprintKey" value="ControlLeft" placeholder="e.g., ControlLeft, ShiftLeft">
+      </div>
+      <details open>
+        <summary>Optimizations</summary>
+        <div class="toggles">
+          <label class="tog" for="ch1"><input type="checkbox" id="ch1" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">Context Tuning</div><div class="tog-desc">Disables MSAA and requests the high-performance GPU for lower latency and higher FPS</div></div></label>
+          <label class="tog" for="ch3"><input type="checkbox" id="ch3" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">Background Throttle</div><div class="tog-desc">Limits the game to 1 FPS when alt-tabbed — saves massive CPU/battery while staying connected</div></div></label>
+          <label class="tog" for="ch4"><input type="checkbox" id="ch4" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">Flat Textures</div><div class="tog-desc">Forces <code>gl.NEAREST</code> filtering and disables mipmapping — massive GPU fill-rate savings</div></div></label>
+          <label class="tog" for="ch11"><input type="checkbox" id="ch11" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">Mipmap Suppression</div><div class="tog-desc">Blocks <code>gl.generateMipmap</code> calls to save CPU/GPU time during texture stitching</div></div></label>
+          <label class="tog" for="ch12"><input type="checkbox" id="ch12" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">Disable Dithering</div><div class="tog-desc">Calls <code>gl.disable(gl.DITHER)</code> to skip unnecessary color blending calculations on modern displays</div></div></label>
+          <label class="tog" for="ch5"><input type="checkbox" id="ch5" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">Stutter Fix</div><div class="tog-desc">Implements VBO orphaning on <code>bufferSubData</code> — eliminates chunk update micro-stutters</div></div></label>
+          <label class="tog" for="ch6"><input type="checkbox" id="ch6" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">Uncap FPS</div><div class="tog-desc">Overrides <code>requestAnimationFrame</code> to bypass the browser's 60Hz V-Sync cap</div></div></label>
+          <label class="tog" for="ch13"><input type="checkbox" id="ch13" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">Audio Thread Offloading</div><div class="tog-desc">Requests <code>latencyHint: 'playback'</code> for the Web Audio API to reduce CPU usage</div></div></label>
+          <label class="tog" for="ch14"><input type="checkbox" id="ch14" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">Disable Colorspace Conversion</div><div class="tog-desc">Forces <code>UNPACK_COLORSPACE_CONVERSION_WEBGL</code> to NONE to skip OS-level color math on textures</div></div></label>
+          <label class="tog" for="ch15"><input type="checkbox" id="ch15" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">Suppress GL Error Checking</div><div class="tog-desc">Bypasses <code>gl.getError()</code> queries to prevent the CPU from stalling while waiting for the GPU</div></div></label>
+          <label class="tog" for="ch16"><input type="checkbox" id="ch16" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">Disable Line Smoothing</div><div class="tog-desc">Calls <code>gl.disable(gl.LINE_SMOOTH)</code> to prevent expensive edge-blending on block selection outlines</div></div></label>
+          <label class="tog" for="ch17"><input type="checkbox" id="ch17" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">Force Single-Sampled Renderbuffers</div><div class="tog-desc">Downgrades <code>renderbufferStorageMultisample</code> to 1x to save VRAM and avoid offscreen MSAA resolving</div></div></label>
+          <label class="tog" for="ch18"><input type="checkbox" id="ch18" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">CSS Canvas Compositing</div><div class="tog-desc">Applies <code>image-rendering: pixelated</code> to skip OS-level CSS smoothing when scaling the canvas</div></div></label>
+        </div>
+      </details>
+      <details open>
+        <summary>Quality-of-Life</summary>
+        <div class="toggles">
+          <label class="tog" for="ch8"><input type="checkbox" id="ch8" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">Fullbright</div><div class="tog-desc">Safely intercepts terrain VBO uploads and forces light levels to max (1.12.2 only)</div></div></label>
+          <label class="tog" for="ch9"><input type="checkbox" id="ch9" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">AutoSprint</div><div class="tog-desc">Injects your custom Sprint Keybind when pressing W to naturally trigger sprinting without bugs</div></div></label>
+          <label class="tog" for="ch10"><input type="checkbox" id="ch10" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">Zoom (Hold C)</div><div class="tog-desc">Scales the game canvas 4x via CSS transforms to provide a smooth magnification without X-ray bugs</div></div></label>
+          <label class="tog" for="ch7"><input type="checkbox" id="ch7" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title"><span class="badge b-hud">HUD</span> Stats Overlay</div><div class="tog-desc">Live FPS · Draw calls/f · Throttle Status — toggle with <code>F3&thinsp;+&thinsp;O</code></div></div></label>
+        </div>
+      </details>
+    </div>
+    <footer>All Eaglercraft servers &nbsp;·&nbsp; .epk worlds &nbsp;·&nbsp; WebGL 1.0 &amp; 2.0 &nbsp;·&nbsp; No gameplay changes</footer>
+  </div>
+
+  <script>
+    'use strict';
+    var SRC_URL_112 = 'https://cdn.jsdelivr.net/gh/PlanetDogeCodes/Eagletcraft-1.12@main/source%20file/egc1-12.xml';
+    var SRC_URL_121 = 'https://6a4094e126b7f3a94d4e664f--verdant-kringle-3d65de.netlify.app/';
+
+    function EaglerLiteOptimizer(CFG) {
+      'use strict';
+      var S = { draws: 0 };
+      if (CFG.p9) { var origAudioCtx = window.AudioContext || window.webkitAudioContext; if (origAudioCtx) { var WrappedAudioContext = function(opts) { var finalOpts = Object.assign({}, opts || {}, { latencyHint: 'playback' }); try { return new origAudioCtx(finalOpts); } catch(e) { try { return new origAudioCtx(opts); } catch(e2) { return new origAudioCtx(); } } }; WrappedAudioContext.prototype = origAudioCtx.prototype; window.AudioContext = WrappedAudioContext; if (window.webkitAudioContext) window.webkitAudioContext = WrappedAudioContext; } }
+      if (CFG.zoom) { var gameCanvas = null; function applyZoom(on) { if (!gameCanvas || !gameCanvas.isConnected) gameCanvas = document.querySelector('canvas'); if (gameCanvas) { gameCanvas.style.transform = on ? "scale(4)" : "scale(1)"; gameCanvas.style.transformOrigin = "center center"; gameCanvas.style.transition = "transform 0.15s ease"; } } document.addEventListener('keydown', function(e) { if (e.code === 'KeyC' || e.key === 'c' || e.key === 'C' || e.keyCode === 67) applyZoom(true); }); document.addEventListener('keyup', function(e) { if (e.code === 'KeyC' || e.key === 'c' || e.key === 'C' || e.keyCode === 67) applyZoom(false); }); }
+      if (CFG.autosprint) { var sprintCode = CFG.sprintKey || 'ControlLeft'; var sprintKeyCode = 17; if (sprintCode === 'ShiftLeft' || sprintCode === 'ShiftRight') sprintKeyCode = 16; else if (sprintCode === 'AltLeft' || sprintCode === 'AltRight') sprintKeyCode = 18; function sendSprintEvent(type) { var ev = new KeyboardEvent(type, { code: sprintCode, keyCode: sprintKeyCode, which: sprintKeyCode, bubbles: true }); try { Object.defineProperty(ev, 'isTrusted', { get: function() { return true; }, configurable: true }); } catch(_) {} document.dispatchEvent(ev); } window.addEventListener('keydown', function(e) { if ((e.code === 'KeyW' || e.keyCode === 87) && !e.repeat) { sendSprintEvent('keydown'); } }); window.addEventListener('keyup', function(e) { if (e.code === 'KeyW' || e.keyCode === 87) { sendSprintEvent('keyup'); } }); }
+      function blankCache(gl) { return { buffers: Object.create(null) }; }
+      function applyFullbright(raw) { if (CFG.gameVersion !== '1.12.2') return; try { var f, i16; if (raw instanceof Float32Array) { f = raw; i16 = new Int16Array(f.buffer, f.byteOffset, Math.floor(f.byteLength / 2)); } else if (raw && raw.buffer instanceof ArrayBuffer) { f = new Float32Array(raw.buffer, raw.byteOffset, Math.floor(raw.byteLength / 4)); i16 = new Int16Array(raw.buffer, raw.byteOffset, Math.floor(raw.byteLength / 2)); } else if (raw instanceof ArrayBuffer) { f = new Float32Array(raw); i16 = new Int16Array(raw); } else return; if (f.length < 7) return; if (f.byteLength % 28 !== 0) return; for (var i = 0; i + 6 < f.length; i += 7) { var y = f[i+1]; if (y < -200 || y > 600) continue; var sIdx = i * 2 + 12; if (i16[sIdx] < 208) i16[sIdx] = 208; if (i16[sIdx + 1] < 208) i16[sIdx + 1] = 208; } } catch(_) {} }
+      function wrapGL(gl) { if (gl.__eaglerLite) return gl; gl.__eaglerLite = true; var cache = blankCache(gl); var bufferMeta = new Map(); function wrap(name, fn) { if (typeof gl[name] === 'function') { var orig = gl[name].bind(gl); gl[name] = fn(orig); return orig; } return null; } if (CFG.p8 || CFG.p12) { try { if (CFG.p8) gl.disable(gl.DITHER); if (CFG.p12 && typeof gl.LINE_SMOOTH !== 'undefined') gl.disable(gl.LINE_SMOOTH); } catch(e) {} } if (CFG.p14 && gl.canvas && gl.canvas.style) { gl.canvas.style.imageRendering = 'pixelated'; } if (CFG.p13 && typeof gl.renderbufferStorageMultisample === 'function') { wrap('renderbufferStorageMultisample', function(orig) { return function(target, samples, internalformat, width, height) { try { gl.renderbufferStorage(target, internalformat, width, height); } catch(e) { orig(target, samples, internalformat, width, height); } }; }); } if (CFG.p10) { try { gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE); } catch(e) {} wrap('pixelStorei', function(orig) { return function(pname, param) { if (pname === gl.UNPACK_COLORSPACE_CONVERSION_WEBGL) { param = gl.NONE; } orig(pname, param); }; }); } if (CFG.p11) { wrap('getError', function(orig) { return function() { if (gl.isContextLost()) { return 9; } return 0; }; }); } if (CFG.p7) { wrap('generateMipmap', function(orig) { return function(target) {}; }); } var origBufferData = wrap('bufferData', function(orig) { return function(target, dataOrSize, usage, srcOffset, length) { if (CFG.fullbright && target === gl.ARRAY_BUFFER && dataOrSize && typeof dataOrSize !== 'number' && dataOrSize.byteLength >= 16384) { try { applyFullbright(dataOrSize); } catch(_) {} } if (srcOffset !== undefined) orig(target, dataOrSize, usage, srcOffset, length); else orig(target, dataOrSize, usage); var buf = cache.buffers[target]; if (buf) { var size = (typeof dataOrSize === 'number') ? dataOrSize : (dataOrSize && dataOrSize.byteLength !== undefined ? dataOrSize.byteLength : 0); if (size > 0) bufferMeta.set(buf, { size: size, usage: usage }); } }; }); wrap('bindBuffer', function(orig) { return function(target, buf) { cache.buffers[target] = buf; orig(target, buf); }; }); wrap('bufferSubData', function(orig) { return function(target, offset, data, srcOffset, length) { if (CFG.fullbright && target === gl.ARRAY_BUFFER && data && typeof data !== 'number' && data.byteLength >= 16384) { try { applyFullbright(data); } catch(_) {} } if (CFG.p5 && offset === 0 && data) { var bufId = cache.buffers[target]; if (bufId) { var meta = bufferMeta.get(bufId); if (meta && data.byteLength <= meta.size) { try { origBufferData(target, meta.size, meta.usage); } catch(_) {} } } } if (srcOffset !== undefined) orig(target, offset, data, srcOffset, length); else orig(target, offset, data); }; }); wrap('deleteBuffer', function(orig) { return function(buf) { if (buf) { var b = cache.buffers; for (var k in b) if (b[k] === buf) delete b[k]; if (CFG.p5) bufferMeta.delete(buf); } orig(buf); }; }); wrap('texParameteri', function(orig) { return function(target, pname, param) { if (pname === gl.TEXTURE_MIN_FILTER || pname === gl.TEXTURE_MAG_FILTER) { if (CFG.p4) { param = gl.NEAREST; } else if (CFG.p7 && pname === gl.TEXTURE_MIN_FILTER) { if (param === gl.NEAREST_MIPMAP_NEAREST || param === gl.LINEAR_MIPMAP_NEAREST || param === gl.NEAREST_MIPMAP_LINEAR || param === gl.LINEAR_MIPMAP_LINEAR) { param = gl.LINEAR; } } } orig(target, pname, param); }; }); wrap('drawArrays', function(orig) { return function(mode, first, count) { S.draws++; orig(mode, first, count); }; }); wrap('drawElements', function(orig) { return function(mode, count, type, offset) { S.draws++; orig(mode, count, type, offset); }; }); if (gl.canvas) { gl.canvas.addEventListener('webglcontextrestored', function() { var fresh = blankCache(gl); var keys = Object.keys(fresh); for (var i = 0; i < keys.length; i++) cache[keys[i]] = fresh[keys[i]]; bufferMeta.clear(); if (CFG.p8) { try { gl.disable(gl.DITHER); } catch(e) {} } if (CFG.p10) { try { gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE); } catch(e) {} } if (CFG.p12 && typeof gl.LINE_SMOOTH !== 'undefined') { try { gl.disable(gl.LINE_SMOOTH); } catch(e) {} } }); } return gl; }
+      var _getCtx = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function(type, opts) { if (CFG.p1 && (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl')) { opts = Object.assign({}, opts, { antialias: false, powerPreference: 'high-performance' }); } var ctx = _getCtx.call(this, type, opts); if (ctx && (CFG.p4 || CFG.p5 || CFG.fullbright || CFG.p7 || CFG.p8 || CFG.p10 || CFG.p11 || CFG.p12 || CFG.p13 || CFG.p14) && (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl')) { try { return wrapGL(ctx); } catch(e) { ctx.__eaglerLite = true; } } return ctx; };
+      var uncapChannel = new MessageChannel(); var uncapQueue = []; uncapChannel.port1.onmessage = function() { var cb = uncapQueue.shift(); if (cb) cb(performance.now()); };
+      var origRAF = window.requestAnimationFrame.bind(window);
+      window.requestAnimationFrame = function(cb) { if (document.hidden && CFG.p3) { return setTimeout(function() { cb(performance.now()); }, 1000); } if (CFG.p6 && document.pointerLockElement) { uncapQueue.push(cb); uncapChannel.port2.postMessage(0); return 0; } return origRAF(cb); };
+      try { if (CFG.tabName) { document.title = CFG.tabName; setTimeout(function() { document.title = CFG.tabName; }, 6000); } if (CFG.favicon) { var link = document.querySelector("link[rel*='icon']") || document.createElement('link'); link.rel = 'icon'; var fav = CFG.favicon; if (/^https?:\/\//i.test(fav) || fav.startsWith('data:') || fav.startsWith('/')) { link.href = fav; } else { var svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>" + fav + "</text></svg>"; link.href = 'data:image/svg+xml,' + encodeURIComponent(svg); } document.head.appendChild(link); } } catch(e) {}
+      if (CFG.hud) { var hud = document.createElement('div'); Object.assign(hud.style, { position: 'fixed', top: '4px', left: '4px', background: 'rgba(0,0,0,0.65)', color: '#ffffff', font: 'bold 11px/1.9 "Courier New",monospace', padding: '5px 11px', borderRadius: '4px', zIndex: '999999', pointerEvents: 'none', userSelect: 'none', whiteSpace: 'pre', border: '1px solid rgba(255,255,255,0.15)', letterSpacing: '0.02em' }); function attachHUD() { if (document.body) document.body.appendChild(hud); } if (document.body) attachHUD(); else document.addEventListener('DOMContentLoaded', attachHUD); var t0 = performance.now(), fr = 0, d0 = 0; (function tick() { origRAF(tick); fr++; var now = performance.now(), dt = now - t0; if (dt < 500) return; var fps = (fr / dt * 1000).toFixed(1); var dpf = ((S.draws - d0) / fr).toFixed(1); var thrtl = CFG.p3 && document.hidden ? 'YES' : 'NO'; hud.textContent = 'FPS       ' + fps + '\n' + 'Draw/f    ' + dpf + '\n' + 'Throttled ' + thrtl; t0 = now; fr = 0; d0 = S.draws; })(); var f3 = false; window.addEventListener('keydown', function(e) { if (e.code === 'F3') f3 = true; if (e.code === 'KeyO' && f3) hud.style.display = hud.style.display === 'none' ? '' : 'none'; }); window.addEventListener('keyup', function(e) { if (e.code === 'F3') f3 = false; }); }
+    }
+
+    function setStatus(msg, cls) { var el = document.getElementById('status'); el.textContent = msg; el.className = cls || ''; }
+    function setProgress(v) { document.getElementById('prog-fill').style.width = Math.round(Math.max(0, Math.min(1, v)) * 100) + '%'; }
+    function setBusy(on) { var btn = document.getElementById('launchBtn'); btn.disabled = on; btn.textContent = on ? 'Loading…' : 'Launch Game'; }
+    function decodeBlob(blob) { return new Promise(function(res, rej) { var fr = new FileReader(); fr.onload = function() { res(fr.result); }; fr.onerror = function() { rej(fr.error); }; fr.readAsText(blob); }); }
+
+    async function launchGame() {
+      var version = document.getElementById('gameVersion').value;
+      var srcUrl = (version === '1.21.11') ? SRC_URL_121 : SRC_URL_112;
+      var tabName = (document.getElementById('tabName').value.trim()) || 'Eaglercraft';
+      var sprintKey = (document.getElementById('sprintKey').value.trim()) || 'ControlLeft';
+      var favicon = document.getElementById('favicon').value.trim();
+      
+      var cfg = {
+        p1: document.getElementById('ch1').checked, p3: document.getElementById('ch3').checked, p4: document.getElementById('ch4').checked,
+        p5: document.getElementById('ch5').checked, p6: document.getElementById('ch6').checked, p7: document.getElementById('ch11').checked,
+        p8: document.getElementById('ch12').checked, p9: document.getElementById('ch13').checked, p10: document.getElementById('ch14').checked,
+        p11: document.getElementById('ch15').checked, p12: document.getElementById('ch16').checked, p13: document.getElementById('ch17').checked,
+        p14: document.getElementById('ch18').checked, fullbright: document.getElementById('ch8').checked, autosprint: document.getElementById('ch9').checked,
+        zoom: document.getElementById('ch10').checked, hud: document.getElementById('ch7').checked, tabName: tabName, sprintKey: sprintKey, favicon: favicon, gameVersion: version
+      };
+
+      if (version === '1.21.11') {
+        setBusy(true); setProgress(1); setStatus('Launching 1.21.11...', 'load');
+        var url = new URL(srcUrl);
+        Object.keys(cfg).forEach(function(key) { if (typeof cfg[key] === 'boolean') { url.searchParams.set(key, cfg[key]); } else if (cfg[key]) { url.searchParams.set(key, cfg[key]); } });
+
+        // --- ABOUT:BLANK IFRAME CLOAKING ---
+        var win = window.open('about:blank', '_blank');
+        if (!win) { setStatus('Pop-up blocked!', 'err'); setBusy(false); return; }
+        
+        var safeTabName = tabName.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        var fav = favicon;
+        var faviconHref = '';
+        if (/^https?:\/\//i.test(fav) || fav.startsWith('data:') || fav.startsWith('/')) {
+          faviconHref = fav;
+        } else {
+          var svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>" + fav + "</text></svg>";
+          faviconHref = 'data:image/svg+xml,' + encodeURIComponent(svg);
+        }
+        
+        var cloakHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + safeTabName + '</title>' +
+          '<link rel="icon" href="' + faviconHref + '">' +
+          '<style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;}iframe{width:100%;height:100%;border:0;}</style>' +
+          '</head><body>' +
+          '<iframe src="' + url.toString() + '" allow="autoplay; fullscreen; gamepad; pointer-lock; cross-origin-isolated; clipboard-read; clipboard-write"></iframe>' +
+          '</body></html>';
+        
+        win.document.open();
+        win.document.write(cloakHtml);
+        win.document.close();
+        
+        setTimeout(function() { setStatus('✓ Launched 1.21.11 in cloaked tab!', 'ok'); setBusy(false); }, 500);
+
+      } else {
+        // --- DIRECT FETCH METHOD FOR 1.12.2 ---
+        var optiCode = '(' + EaglerLiteOptimizer.toString() + ')(' + JSON.stringify(cfg) + ');';
+        var safeOptiCode = optiCode.replace(/<\/script>/gi, '<\\/script>');
+        var win = window.open('about:blank', '_blank');
+        if (!win) { setStatus('Pop-up blocked!', 'err'); return; }
+        try { win.document.title = tabName; } catch(_) {}
+        setBusy(true); setProgress(0); setStatus('Fetching game data...', 'load');
+
+        var response;
+        try {
+          response = await fetch(srcUrl);
+          if (!response.ok) throw new Error('HTTP ' + response.status);
+        } catch (err) {
+          setStatus('Direct download blocked, retrying via proxy...', 'load');
+          try {
+            var proxyUrl = 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(srcUrl);
+            response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+          } catch (err2) { setStatus('Download failed: ' + err2.message, 'err'); setBusy(false); return; }
+        }
+
+        var total = +response.headers.get('Content-Length') || 0;
+        var reader = response.body.getReader(); var parts = []; var loaded = 0;
+        for (;;) { var chunk = await reader.read(); if (chunk.done) break; parts.push(chunk.value); loaded += chunk.value.length; if (total) setProgress(Math.min(0.9, loaded / total)); else setProgress(0.5); if (total) setStatus('Downloading... ' + Math.round((loaded / total) * 100) + '%', 'load'); }
+        setProgress(0.95); setStatus('Decoding game data...', 'load');
+        var content = await decodeBlob(new Blob(parts));
+        content = content.replace(/^<\?xml[^>]*\?>\s*/i, '');
+        setStatus('Injecting optimizations...', 'load');
+        var inject = '<base href="' + srcUrl.substring(0, srcUrl.lastIndexOf('/') + 1) + '">\n<scr' + 'ipt>' + safeOptiCode + '</scr' + 'ipt>\n';
+        try { win.document.open(); win.document.write(inject + content); win.document.close(); } catch(e) { setStatus('Error launching: ' + e.message, 'err'); }
+        setStatus('✓ Launched in new tab!', 'ok'); setProgress(1); setBusy(false);
+      }
+    }
+
+    document.getElementById('launchBtn').addEventListener('click', launchGame);
+    document.getElementById('tabName').addEventListener('keydown', function(e) { if (e.key === 'Enter') launchGame(); });
+  </script>
+</body>
+</html>
