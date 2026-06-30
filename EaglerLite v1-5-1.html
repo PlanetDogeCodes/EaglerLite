@@ -167,18 +167,274 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
     function EaglerLiteOptimizer(CFG) {
       'use strict';
       var S = { draws: 0 };
-      if (CFG.p9) { var origAudioCtx = window.AudioContext || window.webkitAudioContext; if (origAudioCtx) { var WrappedAudioContext = function(opts) { var finalOpts = Object.assign({}, opts || {}, { latencyHint: 'playback' }); try { return new origAudioCtx(finalOpts); } catch(e) { try { return new origAudioCtx(opts); } catch(e2) { return new origAudioCtx(); } } }; WrappedAudioContext.prototype = origAudioCtx.prototype; window.AudioContext = WrappedAudioContext; if (window.webkitAudioContext) window.webkitAudioContext = WrappedAudioContext; } }
-      if (CFG.zoom) { var gameCanvas = null; function applyZoom(on) { if (!gameCanvas || !gameCanvas.isConnected) gameCanvas = document.querySelector('canvas'); if (gameCanvas) { gameCanvas.style.transform = on ? "scale(4)" : "scale(1)"; gameCanvas.style.transformOrigin = "center center"; gameCanvas.style.transition = "transform 0.15s ease"; } } document.addEventListener('keydown', function(e) { if (e.code === 'KeyC' || e.key === 'c' || e.key === 'C' || e.keyCode === 67) applyZoom(true); }); document.addEventListener('keyup', function(e) { if (e.code === 'KeyC' || e.key === 'c' || e.key === 'C' || e.keyCode === 67) applyZoom(false); }); }
-      if (CFG.autosprint) { var sprintCode = CFG.sprintKey || 'ControlLeft'; var sprintKeyCode = 17; if (sprintCode === 'ShiftLeft' || sprintCode === 'ShiftRight') sprintKeyCode = 16; else if (sprintCode === 'AltLeft' || sprintCode === 'AltRight') sprintKeyCode = 18; function sendSprintEvent(type) { var ev = new KeyboardEvent(type, { code: sprintCode, keyCode: sprintKeyCode, which: sprintKeyCode, bubbles: true }); try { Object.defineProperty(ev, 'isTrusted', { get: function() { return true; }, configurable: true }); } catch(_) {} document.dispatchEvent(ev); } window.addEventListener('keydown', function(e) { if ((e.code === 'KeyW' || e.keyCode === 87) && !e.repeat) { sendSprintEvent('keydown'); } }); window.addEventListener('keyup', function(e) { if (e.code === 'KeyW' || e.keyCode === 87) { sendSprintEvent('keyup'); } }); }
+
+      // Audio Thread Offloading (Safely inherits prototype and merges options)
+      if (CFG.p9) {
+        var origAudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (origAudioCtx) {
+          var WrappedAudioContext = function(opts) {
+            var finalOpts = Object.assign({}, opts || {}, { latencyHint: 'playback' });
+            try { return new origAudioCtx(finalOpts); } catch(e) { try { return new origAudioCtx(opts); } catch(e2) { return new origAudioCtx(); } } 
+          };
+          WrappedAudioContext.prototype = origAudioCtx.prototype;
+          window.AudioContext = WrappedAudioContext;
+          if (window.webkitAudioContext) window.webkitAudioContext = WrappedAudioContext;
+        }
+      }
+
+      // Zoom: Pure CSS Canvas Scaling
+      if (CFG.zoom) {
+        var gameCanvas = null;
+        function applyZoom(on) {
+          if (!gameCanvas || !gameCanvas.isConnected) gameCanvas = document.querySelector('canvas');
+          if (gameCanvas) {
+            gameCanvas.style.transform = on ? "scale(4)" : "scale(1)";
+            gameCanvas.style.transformOrigin = "center center";
+            gameCanvas.style.transition = "transform 0.15s ease";
+          }
+        }
+        document.addEventListener('keydown', function(e) { if ((e.code === 'KeyC' || e.key === 'c' || e.key === 'C' || e.keyCode === 67) && document.pointerLockElement) applyZoom(true); });
+        document.addEventListener('keyup', function(e) { if ((e.code === 'KeyC' || e.key === 'c' || e.key === 'C' || e.keyCode === 67) && document.pointerLockElement) applyZoom(false); });
+      }
+
+      // AutoSprint: Custom Keybind Injection dispatched to document
+      if (CFG.autosprint) {
+        var sprintCode = CFG.sprintKey || 'ControlLeft';
+        var sprintKeyCode = 17; var sprintKeyStr = 'Control';
+        if (sprintCode === 'ShiftLeft' || sprintCode === 'ShiftRight') { sprintKeyCode = 16; sprintKeyStr = 'Shift'; }
+        else if (sprintCode === 'AltLeft' || sprintCode === 'AltRight') { sprintKeyCode = 18; sprintKeyStr = 'Alt'; }
+        
+        function sendSprintEvent(type) { 
+          var ev = new KeyboardEvent(type, { code: sprintCode, keyCode: sprintKeyCode, which: sprintKeyCode, key: sprintKeyStr, bubbles: true }); 
+          try { Object.defineProperty(ev, 'isTrusted', { get: function() { return true; }, configurable: true }); } catch(_) {} 
+          document.dispatchEvent(ev); 
+        }
+        window.addEventListener('keydown', function(e) { 
+          if ((e.code === 'KeyW' || e.keyCode === 87) && !e.repeat && document.pointerLockElement) { 
+            sendSprintEvent('keydown'); 
+          } 
+        });
+        window.addEventListener('keyup', function(e) { 
+          if ((e.code === 'KeyW' || e.keyCode === 87) && document.pointerLockElement) { 
+            sendSprintEvent('keyup'); 
+          } 
+        });
+      }
+
       function blankCache(gl) { return { buffers: Object.create(null) }; }
-      function applyFullbright(raw) { if (CFG.gameVersion !== '1.12.2') return; try { var f, i16; if (raw instanceof Float32Array) { f = raw; i16 = new Int16Array(f.buffer, f.byteOffset, Math.floor(f.byteLength / 2)); } else if (raw && raw.buffer instanceof ArrayBuffer) { f = new Float32Array(raw.buffer, raw.byteOffset, Math.floor(raw.byteLength / 4)); i16 = new Int16Array(raw.buffer, raw.byteOffset, Math.floor(raw.byteLength / 2)); } else if (raw instanceof ArrayBuffer) { f = new Float32Array(raw); i16 = new Int16Array(raw); } else return; if (f.length < 7) return; if (f.byteLength % 28 !== 0) return; for (var i = 0; i + 6 < f.length; i += 7) { var y = f[i+1]; if (y < -200 || y > 600) continue; var sIdx = i * 2 + 12; if (i16[sIdx] < 208) i16[sIdx] = 208; if (i16[sIdx + 1] < 208) i16[sIdx + 1] = 208; } } catch(_) {} }
-      function wrapGL(gl) { if (gl.__eaglerLite) return gl; gl.__eaglerLite = true; var cache = blankCache(gl); var bufferMeta = new Map(); function wrap(name, fn) { if (typeof gl[name] === 'function') { var orig = gl[name].bind(gl); gl[name] = fn(orig); return orig; } return null; } if (CFG.p8 || CFG.p12) { try { if (CFG.p8) gl.disable(gl.DITHER); if (CFG.p12 && typeof gl.LINE_SMOOTH !== 'undefined') gl.disable(gl.LINE_SMOOTH); } catch(e) {} } if (CFG.p14 && gl.canvas && gl.canvas.style) { gl.canvas.style.imageRendering = 'pixelated'; } if (CFG.p13 && typeof gl.renderbufferStorageMultisample === 'function') { wrap('renderbufferStorageMultisample', function(orig) { return function(target, samples, internalformat, width, height) { try { gl.renderbufferStorage(target, internalformat, width, height); } catch(e) { orig(target, samples, internalformat, width, height); } }; }); } if (CFG.p10) { try { gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE); } catch(e) {} wrap('pixelStorei', function(orig) { return function(pname, param) { if (pname === gl.UNPACK_COLORSPACE_CONVERSION_WEBGL) { param = gl.NONE; } orig(pname, param); }; }); } if (CFG.p11) { wrap('getError', function(orig) { return function() { if (gl.isContextLost()) { return 9; } return 0; }; }); } if (CFG.p7) { wrap('generateMipmap', function(orig) { return function(target) {}; }); } var origBufferData = wrap('bufferData', function(orig) { return function(target, dataOrSize, usage, srcOffset, length) { if (CFG.fullbright && target === gl.ARRAY_BUFFER && dataOrSize && typeof dataOrSize !== 'number' && dataOrSize.byteLength >= 16384) { try { applyFullbright(dataOrSize); } catch(_) {} } if (srcOffset !== undefined) orig(target, dataOrSize, usage, srcOffset, length); else orig(target, dataOrSize, usage); var buf = cache.buffers[target]; if (buf) { var size = (typeof dataOrSize === 'number') ? dataOrSize : (dataOrSize && dataOrSize.byteLength !== undefined ? dataOrSize.byteLength : 0); if (size > 0) bufferMeta.set(buf, { size: size, usage: usage }); } }; }); wrap('bindBuffer', function(orig) { return function(target, buf) { cache.buffers[target] = buf; orig(target, buf); }; }); wrap('bufferSubData', function(orig) { return function(target, offset, data, srcOffset, length) { if (CFG.fullbright && target === gl.ARRAY_BUFFER && data && typeof data !== 'number' && data.byteLength >= 16384) { try { applyFullbright(data); } catch(_) {} } if (CFG.p5 && offset === 0 && data) { var bufId = cache.buffers[target]; if (bufId) { var meta = bufferMeta.get(bufId); if (meta && data.byteLength <= meta.size) { try { origBufferData(target, meta.size, meta.usage); } catch(_) {} } } } if (srcOffset !== undefined) orig(target, offset, data, srcOffset, length); else orig(target, offset, data); }; }); wrap('deleteBuffer', function(orig) { return function(buf) { if (buf) { var b = cache.buffers; for (var k in b) if (b[k] === buf) delete b[k]; if (CFG.p5) bufferMeta.delete(buf); } orig(buf); }; }); wrap('texParameteri', function(orig) { return function(target, pname, param) { if (pname === gl.TEXTURE_MIN_FILTER || pname === gl.TEXTURE_MAG_FILTER) { if (CFG.p4) { param = gl.NEAREST; } else if (CFG.p7 && pname === gl.TEXTURE_MIN_FILTER) { if (param === gl.NEAREST_MIPMAP_NEAREST || param === gl.LINEAR_MIPMAP_NEAREST || param === gl.NEAREST_MIPMAP_LINEAR || param === gl.LINEAR_MIPMAP_LINEAR) { param = gl.LINEAR; } } } orig(target, pname, param); }; }); wrap('drawArrays', function(orig) { return function(mode, first, count) { S.draws++; orig(mode, first, count); }; }); wrap('drawElements', function(orig) { return function(mode, count, type, offset) { S.draws++; orig(mode, count, type, offset); }; }); if (gl.canvas) { gl.canvas.addEventListener('webglcontextrestored', function() { var fresh = blankCache(gl); var keys = Object.keys(fresh); for (var i = 0; i < keys.length; i++) cache[keys[i]] = fresh[keys[i]]; bufferMeta.clear(); if (CFG.p8) { try { gl.disable(gl.DITHER); } catch(e) {} } if (CFG.p10) { try { gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE); } catch(e) {} } if (CFG.p12 && typeof gl.LINE_SMOOTH !== 'undefined') { try { gl.disable(gl.LINE_SMOOTH); } catch(e) {} } }); } return gl; }
-      var _getCtx = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function(type, opts) { if (CFG.p1 && (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl')) { opts = Object.assign({}, opts, { antialias: false, powerPreference: 'high-performance' }); } var ctx = _getCtx.call(this, type, opts); if (ctx && (CFG.p4 || CFG.p5 || CFG.fullbright || CFG.p7 || CFG.p8 || CFG.p10 || CFG.p11 || CFG.p12 || CFG.p13 || CFG.p14) && (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl')) { try { return wrapGL(ctx); } catch(e) { ctx.__eaglerLite = true; } } return ctx; };
+
+      // Fullbright: Strict 28-byte VBO mutation (1.12.2 ONLY)
+      function applyFullbright(raw) {
+        if (CFG.gameVersion !== '1.12.2') return;
+        try {
+          var f, i16;
+          if (raw instanceof Float32Array) { f = raw; i16 = new Int16Array(f.buffer, f.byteOffset, Math.floor(f.byteLength / 2)); } 
+          else if (raw && raw.buffer instanceof ArrayBuffer) { f = new Float32Array(raw.buffer, raw.byteOffset, Math.floor(raw.byteLength / 4)); i16 = new Int16Array(raw.buffer, raw.byteOffset, Math.floor(raw.byteLength / 2)); } 
+          else if (raw instanceof ArrayBuffer) { f = new Float32Array(raw); i16 = new Int16Array(raw); } 
+          else return;
+
+          if (f.length < 7) return;
+          if (f.byteLength % 28 !== 0) return;
+
+          for (var i = 0; i + 6 < f.length; i += 7) {
+            var y = f[i+1];
+            if (y < -200 || y > 600) continue;
+            var sIdx = i * 2 + 12;
+            if (i16[sIdx] < 208) i16[sIdx] = 208;
+            if (i16[sIdx + 1] < 208) i16[sIdx + 1] = 208;
+          }
+        } catch(_) {}
+      }
+
+      function wrapGL(gl) {
+        if (gl.__eaglerLite) return gl;
+        gl.__eaglerLite = true;
+
+        var cache = blankCache(gl);
+        var bufferMeta = new Map();
+
+        function wrap(name, fn) {
+          if (typeof gl[name] === 'function') {
+            var orig = gl[name].bind(gl);
+            gl[name] = fn(orig);
+            return orig;
+          }
+          return null;
+        }
+
+        if (CFG.p8 || CFG.p12) {
+          try {
+            if (CFG.p8) gl.disable(gl.DITHER);
+            if (CFG.p12 && typeof gl.LINE_SMOOTH !== 'undefined') gl.disable(gl.LINE_SMOOTH);
+          } catch(e) {}
+        }
+
+        if (CFG.p14 && gl.canvas && gl.canvas.style) {
+          gl.canvas.style.imageRendering = 'pixelated';
+        }
+
+        if (CFG.p13 && typeof gl.renderbufferStorageMultisample === 'function') {
+          wrap('renderbufferStorageMultisample', function(orig) {
+            return function(target, samples, internalformat, width, height) {
+              try { gl.renderbufferStorage(target, internalformat, width, height); } catch(e) { orig(target, samples, internalformat, width, height); }
+            };
+          });
+        }
+
+        if (CFG.p10) {
+          try { gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE); } catch(e) {}
+          wrap('pixelStorei', function(orig) {
+            return function(pname, param) {
+              if (pname === gl.UNPACK_COLORSPACE_CONVERSION_WEBGL) { param = gl.NONE; }
+              orig(pname, param);
+            };
+          });
+        }
+
+        if (CFG.p11) {
+          wrap('getError', function(orig) {
+            return function() {
+              if (gl.isContextLost()) return 9; // CONTEXT_LOST_WEBGL
+              return 0; // gl.NO_ERROR
+            };
+          });
+        }
+
+        if (CFG.p7) {
+          wrap('generateMipmap', function(orig) { return function(target) {}; });
+        }
+
+        var origBufferData = wrap('bufferData', function(orig) {
+          return function(target, dataOrSize, usage, srcOffset, length) {
+            if (CFG.fullbright && target === gl.ARRAY_BUFFER && dataOrSize && typeof dataOrSize !== 'number' && dataOrSize.byteLength >= 16384) {
+              try { applyFullbright(dataOrSize); } catch(_) {}
+            }
+            if (srcOffset !== undefined) orig(target, dataOrSize, usage, srcOffset, length);
+            else orig(target, dataOrSize, usage);
+
+            var buf = cache.buffers[target];
+            if (buf) {
+              var size = (typeof dataOrSize === 'number') ? dataOrSize : (dataOrSize && dataOrSize.byteLength !== undefined ? dataOrSize.byteLength : 0);
+              if (size > 0) bufferMeta.set(buf, { size: size, usage: usage });
+            }
+          };
+        });
+
+        wrap('bindBuffer', function(orig) {
+          return function(target, buf) {
+            cache.buffers[target] = buf;
+            orig(target, buf);
+          };
+        });
+
+        wrap('bufferSubData', function(orig) {
+          return function(target, offset, data, srcOffset, length) {
+            if (CFG.fullbright && target === gl.ARRAY_BUFFER && data && typeof data !== 'number' && data.byteLength >= 16384) {
+              try { applyFullbright(data); } catch(_) {}
+            }
+            if (CFG.p5 && offset === 0 && data) {
+              var bufId = cache.buffers[target];
+              if (bufId) {
+                var meta = bufferMeta.get(bufId);
+                if (meta && data.byteLength <= meta.size) {
+                  try { origBufferData(target, meta.size, meta.usage); } catch(_) {}
+                }
+              }
+            }
+            if (srcOffset !== undefined) orig(target, offset, data, srcOffset, length);
+            else orig(target, offset, data);
+          };
+        });
+
+        wrap('deleteBuffer', function(orig) {
+          return function(buf) {
+            if (buf) {
+              var b = cache.buffers;
+              for (var k in b) if (b[k] === buf) delete b[k];
+              if (CFG.p5) bufferMeta.delete(buf);
+            }
+            orig(buf);
+          };
+        });
+
+        wrap('texParameteri', function(orig) {
+          return function(target, pname, param) {
+            if (pname === gl.TEXTURE_MIN_FILTER || pname === gl.TEXTURE_MAG_FILTER) {
+              if (CFG.p4) { param = gl.NEAREST; } 
+              else if (CFG.p7 && pname === gl.TEXTURE_MIN_FILTER) {
+                if (param === gl.NEAREST_MIPMAP_NEAREST || param === gl.LINEAR_MIPMAP_NEAREST || param === gl.NEAREST_MIPMAP_LINEAR || param === gl.LINEAR_MIPMAP_LINEAR) { param = gl.LINEAR; }
+              }
+            }
+            orig(target, pname, param);
+          };
+        });
+
+        wrap('drawArrays', function(orig) { return function(mode, first, count) { S.draws++; orig(mode, first, count); }; });
+        wrap('drawElements', function(orig) { return function(mode, count, type, offset) { S.draws++; orig(mode, count, type, offset); }; });
+
+        if (gl.canvas) {
+          gl.canvas.addEventListener('webglcontextrestored', function() {
+            var fresh = blankCache(gl);
+            var keys = Object.keys(fresh);
+            for (var i = 0; i < keys.length; i++) cache[keys[i]] = fresh[keys[i]];
+            bufferMeta.clear();
+            if (CFG.p8) { try { gl.disable(gl.DITHER); } catch(e) {} }
+            if (CFG.p10) { try { gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE); } catch(e) {} }
+            if (CFG.p12 && typeof gl.LINE_SMOOTH !== 'undefined') { try { gl.disable(gl.LINE_SMOOTH); } catch(e) {} }
+          });
+        }
+        return gl;
+      }
+
+      var _getCtx = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function(type, opts) {
+        if (CFG.p1 && (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl')) {
+          opts = Object.assign({}, opts, { antialias: false, powerPreference: 'high-performance' });
+        }
+        var ctx = _getCtx.call(this, type, opts);
+        if (ctx && (CFG.p4 || CFG.p5 || CFG.fullbright || CFG.p7 || CFG.p8 || CFG.p10 || CFG.p11 || CFG.p12 || CFG.p13 || CFG.p14) && (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl')) {
+          try { return wrapGL(ctx); } catch(e) { ctx.__eaglerLite = true; }
+        }
+        return ctx;
+      };
+
+      // Uncap FPS & Background Throttle
       var uncapChannel = new MessageChannel(); var uncapQueue = []; uncapChannel.port1.onmessage = function() { var cb = uncapQueue.shift(); if (cb) cb(performance.now()); };
       var origRAF = window.requestAnimationFrame.bind(window);
-      window.requestAnimationFrame = function(cb) { if (document.hidden && CFG.p3) { return setTimeout(function() { cb(performance.now()); }, 1000); } if (CFG.p6 && document.pointerLockElement) { uncapQueue.push(cb); uncapChannel.port2.postMessage(0); return 0; } return origRAF(cb); };
-      try { if (CFG.tabName) { document.title = CFG.tabName; setTimeout(function() { document.title = CFG.tabName; }, 6000); } if (CFG.favicon) { var link = document.querySelector("link[rel*='icon']") || document.createElement('link'); link.rel = 'icon'; var fav = CFG.favicon; if (/^https?:\/\//i.test(fav) || fav.startsWith('data:') || fav.startsWith('/')) { link.href = fav; } else { var svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>" + fav + "</text></svg>"; link.href = 'data:image/svg+xml,' + encodeURIComponent(svg); } document.head.appendChild(link); } } catch(e) {}
-      if (CFG.hud) { var hud = document.createElement('div'); Object.assign(hud.style, { position: 'fixed', top: '4px', left: '4px', background: 'rgba(0,0,0,0.65)', color: '#ffffff', font: 'bold 11px/1.9 "Courier New",monospace', padding: '5px 11px', borderRadius: '4px', zIndex: '999999', pointerEvents: 'none', userSelect: 'none', whiteSpace: 'pre', border: '1px solid rgba(255,255,255,0.15)', letterSpacing: '0.02em' }); function attachHUD() { if (document.body) document.body.appendChild(hud); } if (document.body) attachHUD(); else document.addEventListener('DOMContentLoaded', attachHUD); var t0 = performance.now(), fr = 0, d0 = 0; (function tick() { origRAF(tick); fr++; var now = performance.now(), dt = now - t0; if (dt < 500) return; var fps = (fr / dt * 1000).toFixed(1); var dpf = ((S.draws - d0) / fr).toFixed(1); var thrtl = CFG.p3 && document.hidden ? 'YES' : 'NO'; hud.textContent = 'FPS       ' + fps + '\n' + 'Draw/f    ' + dpf + '\n' + 'Throttled ' + thrtl; t0 = now; fr = 0; d0 = S.draws; })(); var f3 = false; window.addEventListener('keydown', function(e) { if (e.code === 'F3') f3 = true; if (e.code === 'KeyO' && f3) hud.style.display = hud.style.display === 'none' ? '' : 'none'; }); window.addEventListener('keyup', function(e) { if (e.code === 'F3') f3 = false; }); }
+      window.requestAnimationFrame = function(cb) {
+        if (document.hidden && CFG.p3) { return setTimeout(function() { cb(performance.now()); }, 1000); }
+        if (CFG.p6 && document.pointerLockElement) { uncapQueue.push(cb); uncapChannel.port2.postMessage(0); return 0; }
+        return origRAF(cb);
+      };
+
+      // Tab Title & Favicon Cloaking
+      try {
+        if (CFG.tabName) { document.title = CFG.tabName; setTimeout(function() { document.title = CFG.tabName; }, 6000); }
+        if (CFG.favicon) {
+          var link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+          link.rel = 'icon';
+          var fav = CFG.favicon;
+          if (/^https?:\/\//i.test(fav) || fav.startsWith('data:') || fav.startsWith('/')) { link.href = fav; } 
+          else {
+            var svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>" + fav + "</text></svg>";
+            link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+          }
+          document.head.appendChild(link);
+        }
+      } catch(e) {}
+
+      // HUD Overlay
+      if (CFG.hud) {
+        var hud = document.createElement('div');
+        Object.assign(hud.style, { position: 'fixed', top: '4px', left: '4px', background: 'rgba(0,0,0,0.65)', color: '#ffffff', font: 'bold 11px/1.9 "Courier New",monospace', padding: '5px 11px', borderRadius: '4px', zIndex: '999999', pointerEvents: 'none', userSelect: 'none', whiteSpace: 'pre', border: '1px solid rgba(255,255,255,0.15)', letterSpacing: '0.02em' });
+        function attachHUD() { if (document.body) document.body.appendChild(hud); }
+        if (document.body) attachHUD(); else document.addEventListener('DOMContentLoaded', attachHUD);
+        var t0 = performance.now(), fr = 0, d0 = 0;
+        (function tick() { origRAF(tick); fr++; var now = performance.now(), dt = now - t0; if (dt < 500) return; var fps = (fr / dt * 1000).toFixed(1); var dpf = ((S.draws - d0) / fr).toFixed(1); var thrtl = CFG.p3 && document.hidden ? 'YES' : 'NO'; hud.textContent = 'FPS       ' + fps + '\n' + 'Draw/f    ' + dpf + '\n' + 'Throttled ' + thrtl; t0 = now; fr = 0; d0 = S.draws; })();
+        var f3 = false;
+        window.addEventListener('keydown', function(e) { if (e.code === 'F3') f3 = true; if (e.code === 'KeyO' && f3) hud.style.display = hud.style.display === 'none' ? '' : 'none'; });
+        window.addEventListener('keyup', function(e) { if (e.code === 'F3') f3 = false; });
+      }
     }
 
     function setStatus(msg, cls) { var el = document.getElementById('status'); el.textContent = msg; el.className = cls || ''; }
@@ -203,16 +459,11 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
       };
 
       if (version === '1.21.11') {
-        // --- DIRECT OPEN FOR 1.21.11 ---
-        // Opens directly to Netlify to preserve COOP/COEP headers for SharedArrayBuffer support.
         setBusy(true); setProgress(1); setStatus('Launching 1.21.11...', 'load');
         var url = new URL(srcUrl);
         Object.keys(cfg).forEach(function(key) { if (typeof cfg[key] === 'boolean') { url.searchParams.set(key, cfg[key]); } else if (cfg[key]) { url.searchParams.set(key, cfg[key]); } });
-
         window.open(url.toString(), '_blank');
-        
         setTimeout(function() { setStatus('✓ Launched 1.21.11!', 'ok'); setBusy(false); }, 500);
-
       } else {
         // --- DIRECT FETCH METHOD FOR 1.12.2 ---
         var optiCode = '(' + EaglerLiteOptimizer.toString() + ')(' + JSON.stringify(cfg) + ');';
