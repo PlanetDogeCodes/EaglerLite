@@ -1,6 +1,6 @@
 <!--
 
-EaglerLite Client Launcher - v1.5.0
+EaglerLite Client Launcher - v1.5.1
 
 NOW WITH 1.21.11 SUPPORT!
 
@@ -117,7 +117,7 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
           <option value="1.12.2">Eaglercraft 1.12.2</option>
           <option value="1.21.11" selected>Eaglercraft 1.21.11</option>
         </select>
-        <div class="warning-text">⚠ Note: 1.21.11 loads via URL parameters to ensure stability and bypass download limits.</div>
+        <div class="warning-text">⚠ Note: 1.21.11 opens directly to Netlify to preserve SharedArrayBuffer support. Tab Title/Favicon cloaking still applies.</div>
       </div>
       <div class="field">
         <label for="tabName">Tab Title</label>
@@ -206,36 +206,15 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
       };
 
       if (version === '1.21.11') {
+        // --- DIRECT OPEN FOR 1.21.11 ---
+        // Opens directly to Netlify to preserve COOP/COEP headers for SharedArrayBuffer support.
         setBusy(true); setProgress(1); setStatus('Launching 1.21.11...', 'load');
         var url = new URL(srcUrl);
         Object.keys(cfg).forEach(function(key) { if (typeof cfg[key] === 'boolean') { url.searchParams.set(key, cfg[key]); } else if (cfg[key]) { url.searchParams.set(key, cfg[key]); } });
 
-        // --- ABOUT:BLANK IFRAME CLOAKING ---
-        var win = window.open('about:blank', '_blank');
-        if (!win) { setStatus('Pop-up blocked!', 'err'); setBusy(false); return; }
+        window.open(url.toString(), '_blank');
         
-        var safeTabName = tabName.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        var fav = favicon;
-        var faviconHref = '';
-        if (/^https?:\/\//i.test(fav) || fav.startsWith('data:') || fav.startsWith('/')) {
-          faviconHref = fav;
-        } else {
-          var svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>" + fav + "</text></svg>";
-          faviconHref = 'data:image/svg+xml,' + encodeURIComponent(svg);
-        }
-        
-        var cloakHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + safeTabName + '</title>' +
-          '<link rel="icon" href="' + faviconHref + '">' +
-          '<style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;}iframe{width:100%;height:100%;border:0;}</style>' +
-          '</head><body>' +
-          '<iframe src="' + url.toString() + '" allow="autoplay; fullscreen; gamepad; pointer-lock; cross-origin-isolated; clipboard-read; clipboard-write"></iframe>' +
-          '</body></html>';
-        
-        win.document.open();
-        win.document.write(cloakHtml);
-        win.document.close();
-        
-        setTimeout(function() { setStatus('✓ Launched 1.21.11 in cloaked tab!', 'ok'); setBusy(false); }, 500);
+        setTimeout(function() { setStatus('✓ Launched 1.21.11!', 'ok'); setBusy(false); }, 500);
 
       } else {
         // --- DIRECT FETCH METHOD FOR 1.12.2 ---
