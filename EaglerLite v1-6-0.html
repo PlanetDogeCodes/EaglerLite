@@ -1,6 +1,6 @@
 <!--
 
-EaglerLite Client Launcher - v1.6.0
+EaglerLite Client Launcher - v1.7.0
 
 Pressing the "launch" button opens EaglerLite in a new about:blank tab that is undetectable
 to screen monitoring software. EaglerLite has 40% better tab cloaking/obfuscation than Eagletcraft.
@@ -10,12 +10,6 @@ Leave feedback/report bugs in the Discord: https://discord.gg/2Tz8wxv9yu
 Eaglercraft 1.12 and 1.21 were not created by me
 
 EaglerLite Client created and compiled by PlanetDoge
-
-EaglercraftX 1.12 average FPS: 32
-EaglerLite 1.12 average FPS: 75+
-
-Eaglercraft 1.21.11 average FPS: 21
-EaglerLite 1.21.11 average FPS: 60+
 
 
 
@@ -153,6 +147,7 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
           <label class="tog" for="ch9"><input type="checkbox" id="ch9" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">AutoSprint</div><div class="tog-desc">Injects your custom Sprint Keybind when pressing W to naturally trigger sprinting without bugs</div></div></label>
           <label class="tog" for="ch2"><input type="checkbox" id="ch2" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">Auto-Detect Sprint Key</div><div class="tog-desc">Scans the game's saved keybinds on launch and automatically applies your configured sprint key. Falls back to the manual keybind above if no saved keybinds are found</div></div></label>
           <label class="tog" for="ch10"><input type="checkbox" id="ch10" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">Zoom (Hold C)</div><div class="tog-desc">Scales the game canvas 4x via CSS transforms to provide a smooth magnification without X-ray bugs</div></div></label>
+          <label class="tog" for="ch19"><input type="checkbox" id="ch19" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title">Crystal Optimizer</div><div class="tog-desc">Resets the game's internal place/attack cooldown timers so End Crystals can be placed and broken every tick (20/s) instead of every 4–10 ticks. Automatically detects the cooldown fields on launch — no synthetic input</div></div></label>
           <label class="tog" for="ch7"><input type="checkbox" id="ch7" checked><span class="tog-sw"></span><div class="tog-body"><div class="tog-title"><span class="badge b-hud">HUD</span> Stats Overlay</div><div class="tog-desc">Live FPS · Draw calls/f · Throttle Status — toggle with <code>F3&thinsp;+&thinsp;O</code></div></div></label>
         </div>
       </details>
@@ -624,6 +619,95 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
         window.addEventListener('keydown', function(e) { if (e.code === 'F3') f3 = true; if (e.code === 'KeyO' && f3) hud.style.display = hud.style.display === 'none' ? '' : 'none'; });
         window.addEventListener('keyup', function(e) { if (e.code === 'F3') f3 = false; });
       }
+
+      // Crystal Optimizer: Trap the game's internal cooldown fields via
+      // Object.prototype accessors. The optimizer script runs BEFORE the
+      // game loads (injected into <head>), so we define getter/setter
+      // traps on Object.prototype for rightClickDelayTimer and
+      // leftClickCounter. When the game's constructor first assigns to
+      // either field (this.rightClickDelayTimer = 0), the prototype
+      // setter fires because the instance doesn't have an own property
+      // yet. We capture the this reference, then replace the prototype
+      // trap with an own accessor on the instance that returns 0 during
+      // pointer lock (in-game), bypassing the vanilla 4-tick place and
+      // 10-tick attack cooldowns. No synthetic keys, no synthetic mouse
+      // events — just direct state modification via accessor trapping.
+      if (CFG.crystalOptimizer) {
+        // Suppress context menu during pointer lock so right-click placement
+        // is never interrupted by the browser's context menu.
+        document.addEventListener('contextmenu', function(e) {
+          if (document.pointerLockElement) e.preventDefault();
+        });
+
+        var mcCaptured = false;
+
+        // Sets up an accessor trap on Object.prototype for the given field
+        // name. On first assignment to ANY object, captures that object as
+        // the Minecraft instance, converts the trap to an own accessor on
+        // that instance, and deletes the prototype-wide trap so other
+        // objects are unaffected.
+        function setupCooldownTrap(propName) {
+          try {
+            Object.defineProperty(Object.prototype, propName, {
+              configurable: true,
+              enumerable: false,
+              get: function() {
+                // During pointer lock (in-game): always 0 (crystal optimizer)
+                // Otherwise: return the real stored value
+                if (document.pointerLockElement) return 0;
+                return this['__eaglerLite_' + propName] || 0;
+              },
+              set: function(v) {
+                // Capture the Minecraft instance on first assignment
+                if (!mcCaptured) {
+                  mcCaptured = true;
+                  window.__eaglerLiteMC = this;
+                  try { console.log('[EaglerLite] Crystal Optimizer: captured Minecraft instance via ' + propName); } catch(_) {}
+                }
+                // Store the real value in a hidden non-enumerable property
+                try {
+                  Object.defineProperty(this, '__eaglerLite_' + propName, {
+                    value: v, writable: true, enumerable: false, configurable: true
+                  });
+                } catch(_) {
+                  this['__eaglerLite_' + propName] = v;
+                }
+                // Replace the prototype trap with an own accessor on this
+                // specific instance, so other objects are completely unaffected.
+                try {
+                  Object.defineProperty(this, propName, {
+                    configurable: true,
+                    enumerable: true,
+                    get: function() {
+                      if (document.pointerLockElement) return 0;
+                      return this['__eaglerLite_' + propName] || 0;
+                    },
+                    set: function(v) {
+                      this['__eaglerLite_' + propName] = v;
+                    }
+                  });
+                } catch(_) {}
+                // Remove the prototype-wide trap (no longer needed)
+                try { delete Object.prototype[propName]; } catch(_) {}
+              }
+            });
+          } catch(_) {}
+        }
+
+        setupCooldownTrap('rightClickDelayTimer');
+        setupCooldownTrap('leftClickCounter');
+
+        // Safety: if the traps haven't been triggered after 60s (e.g. field
+        // names were minified by the compiler), clean up the prototype
+        // properties to avoid affecting other objects.
+        setTimeout(function() {
+          if (!mcCaptured) {
+            try { delete Object.prototype.rightClickDelayTimer; } catch(_) {}
+            try { delete Object.prototype.leftClickCounter; } catch(_) {}
+            try { console.log('[EaglerLite] Crystal Optimizer: cooldown fields not found after 60s, traps removed'); } catch(_) {}
+          }
+        }, 60000);
+      }
     }
 
     function setStatus(msg, cls) { var el = document.getElementById('status'); el.textContent = msg; el.className = cls || ''; }
@@ -765,7 +849,7 @@ GitHub Link: https://github.com/PlanetDogeCodes/EaglerLite
         p8: document.getElementById('ch12').checked, p9: document.getElementById('ch13').checked, p10: document.getElementById('ch14').checked,
         p11: document.getElementById('ch15').checked, p12: document.getElementById('ch16').checked, p13: document.getElementById('ch17').checked,
         p14: document.getElementById('ch18').checked, fullbright: document.getElementById('ch8').checked, autosprint: document.getElementById('ch9').checked,
-        zoom: document.getElementById('ch10').checked, hud: document.getElementById('ch7').checked, sprintKeyAuto: document.getElementById('ch2').checked, tabName: tabName, sprintKey: sprintKey, favicon: favicon, gameVersion: version
+        zoom: document.getElementById('ch10').checked, hud: document.getElementById('ch7').checked, sprintKeyAuto: document.getElementById('ch2').checked, crystalOptimizer: document.getElementById('ch19').checked, tabName: tabName, sprintKey: sprintKey, favicon: favicon, gameVersion: version
       };
 
       if (version === '1.21.11') {
