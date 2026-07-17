@@ -8,7 +8,7 @@ This repository holds the latest stable HTML launcher with the optimizer script 
 
 ## What it does
 
-EaglerLite sits between you and the game as a thin optimization layer. It doesn't change how Minecraft plays — it changes how the game *runs*. Higher FPS, lower CPU, longer battery life, same blocks.
+EaglerLite sits between you and the game as a thin optimization layer. Unlike traditional clients, EaglerLite doesn't change any vanilla features, only focusing on Higher FPS, lower CPU, and longer battery life.
 
 The launcher itself is a single HTML file. No install, no dependencies, no server. You open it in a browser, pick your options, hit Launch, and the game opens in a new tab with all optimizations already applied.
 
