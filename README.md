@@ -43,7 +43,7 @@ The game opens in a new `about:blank` tab with all optimizations injected. If yo
 
 ## Credits
 
-- **Eaglercraft** — not created by me, all credit goes to lax1dude and peytonplayz585
+- **Eaglercraft** — not created by me, all credit goes to its respective coders
 - **EaglerLite** — created and compiled by [PlanetDoge](https://github.com/PlanetDogeCodes).
 - **License** — Apache 2.0. Redistribution without attribution is prohibited.
 
