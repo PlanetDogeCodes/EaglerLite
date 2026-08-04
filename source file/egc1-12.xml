@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Module>
+<ModulePrefs title="Loading" />
+<Content type="html"><![CDATA[
+
+
+
+<!DOCTYPE html>
+<html style="width:100%;height:100%;background-color:black;">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
+<title>Home - Classroom</title>
+<script type="text/javascript">
+window.disableUserscripts = true;
+window.__eaglercraftLoaderClient = {
+  container: "game_frame",
+  name: "Home - Classroom",
+  file: "net.peytonplayz585.eaglercraft.v1_12.client",
+  cid: "bafybeidrnchyech7b26rqhm3tayt7p6mxvl23lzd4f5mcyqda7hbrzyal4",
+  path: "",
+  download: "https://cdn.jsdelivr.net/gh/PlanetDogeCodes/EaglerLite@main/source%20file/1-12source.gz",
+  dlSize: 15601341,
+  gzip: true
+};
+</script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/PlanetDogeCodes/EaglerLite@main/source%20file/loader.js"></script>
+<link type="image/png" rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/genizy/mc@main/shared/game.png" />
+</head>
+<body style="margin:0px;width:100%;height:100%;overflow:hidden;background-color:white;">
+<div id="game_frame" style="width:100%;height:100%;"></div>
+</body>
+</html>
+
+
+
+]]></Content>
+</Module>
