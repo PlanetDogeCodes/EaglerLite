@@ -1,5 +1,5 @@
 /*
- * EaglerLite Wispcraft Connector v1.0
+ * EaglerLite Wispcraft Connector v1.1
  *
  * Self-contained epoxy-tls WebSocket wrapper for EaglerLite.
  * Loads epoxy-tls (WASM) from CDN, replaces window.WebSocket with AutoWS
@@ -18,11 +18,20 @@
   var EPOXY_CDN = 'https://cdn.jsdelivr.net/npm/@mercuryworkshop/epoxy-tls@2.1.19-1/full/epoxy-bundled.js';
 
   var wispUrl = window.EAGLERLITE_WISP_URL || DEFAULT_WISP_URL;
+  // Normalize: ensure trailing slash
+  try {
+    var _u = new URL(wispUrl);
+    if (!_u.pathname.endsWith('/')) { _u.pathname += '/'; }
+    wispUrl = _u.href;
+  } catch(_) {}
+
   var origWS = window.WebSocket;
   var epoxyReady = false;
   var epoxyInitPromise = null;
   var epoxyClient = null;
   var EpoxyHandlersClass = null;
+  var EpoxyClientClass = null;
+  var EpoxyClientOptionsClass = null;
 
   // --- Epoxy initialization ---
 
@@ -30,11 +39,13 @@
     if (epoxyInitPromise) return epoxyInitPromise;
     epoxyInitPromise = import(EPOXY_CDN).then(function(mod) {
       return mod.default().then(function() {
-        var opts = new mod.EpoxyClientOptions();
+        EpoxyClientClass = mod.EpoxyClient;
+        EpoxyClientOptionsClass = mod.EpoxyClientOptions;
+        EpoxyHandlersClass = mod.EpoxyHandlers;
+        var opts = new EpoxyClientOptionsClass();
         opts.wisp_v2 = false;
         opts.udp_extension_required = false;
-        epoxyClient = new mod.EpoxyClient(wispUrl, opts);
-        EpoxyHandlersClass = mod.EpoxyHandlers;
+        epoxyClient = new EpoxyClientClass(wispUrl, opts);
         epoxyReady = true;
         console.log('[EaglerLite] Epoxy-TLS initialized (wisp:', wispUrl + ')');
       });
@@ -66,15 +77,21 @@
     this._inner = null;
     this._queue = [];
     this._closed = false;
+    this._dispatchedClose = false;
 
     var protos = Array.isArray(protocols) ? protocols : (protocols ? [protocols] : []);
 
     initEpoxy().then(function() {
       if (self._closed) return;
+      if (!EpoxyHandlersClass || !epoxyClient) {
+        self._fail('Epoxy not properly initialized');
+        return;
+      }
 
       var handlers = new EpoxyHandlersClass(
         // onopen
         function() {
+          if (self._closed) return;
           self.readyState = 1;
           self._dispatch('open', { type: 'open', target: self });
           // Flush queued messages
@@ -85,18 +102,23 @@
         },
         // onclose
         function() {
+          if (self._dispatchedClose) return;
+          self._dispatchedClose = true;
           self.readyState = 3;
           self._closed = true;
           self._dispatch('close', { type: 'close', code: 1000, reason: '', wasClean: true, target: self });
-          if (self._inner) { try { self._inner.free(); } catch(_) {} }
+          if (self._inner) { try { self._inner.free(); } catch(_) {} self._inner = null; }
         },
         // onerror
         function(err) {
           console.error('[EaglerLite] Epoxy WS error:', err);
-          self._dispatch('error', { type: 'error', target: self });
+          if (!self._dispatchedClose) {
+            self._dispatch('error', { type: 'error', target: self });
+          }
         },
         // onmessage
         function(data) {
+          if (self._closed) return;
           // data is Uint8Array — convert to ArrayBuffer for game compatibility
           var buf = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
           self._dispatch('message', { type: 'message', data: buf, target: self });
@@ -104,15 +126,26 @@
       );
 
       epoxyClient.connect_websocket(handlers, url, protos, {}).then(function(ws) {
+        if (self._closed) { try { ws.close(1000, ''); } catch(_) {} try { ws.free(); } catch(_) {} return; }
         self._inner = ws;
       }).catch(function(e) {
         console.error('[EaglerLite] Epoxy connect_websocket failed:', e);
-        self._dispatch('error', { type: 'error', target: self });
-        self._dispatch('close', { type: 'close', code: 1006, reason: 'Epoxy connection failed', wasClean: false, target: self });
+        if (!self._dispatchedClose) {
+          self._dispatch('error', { type: 'error', target: self });
+          self._dispatch('close', { type: 'close', code: 1006, reason: 'Epoxy connection failed', wasClean: false, target: self });
+          self._dispatchedClose = true;
+          self._closed = true;
+          self.readyState = 3;
+        }
       });
     }).catch(function(e) {
-      self._dispatch('error', { type: 'error', target: self });
-      self._dispatch('close', { type: 'close', code: 1006, reason: 'Epoxy init failed', wasClean: false, target: self });
+      if (!self._dispatchedClose) {
+        self._dispatch('error', { type: 'error', target: self });
+        self._dispatch('close', { type: 'close', code: 1006, reason: 'Epoxy init failed', wasClean: false, target: self });
+        self._dispatchedClose = true;
+        self._closed = true;
+        self.readyState = 3;
+      }
     });
   }
 
@@ -141,6 +174,15 @@
     if (ls) { for (var i = 0; i < ls.length; i++) { try { ls[i].call(this, event); } catch(_) {} } }
   };
 
+  EpoxyWS.prototype._fail = function(reason) {
+    if (this._dispatchedClose) return;
+    this._dispatch('error', { type: 'error', target: this });
+    this._dispatch('close', { type: 'close', code: 1006, reason: reason, wasClean: false, target: this });
+    this._dispatchedClose = true;
+    this._closed = true;
+    this.readyState = 3;
+  };
+
   Object.defineProperty(EpoxyWS.prototype, 'binaryType', {
     get: function() { return this._binaryType || 'arraybuffer'; },
     set: function(v) { this._binaryType = v; },
@@ -160,14 +202,18 @@
       return;
     }
     if (!this._inner) return;
-    if (data instanceof ArrayBuffer) {
-      this._inner.send(data);
-    } else if (typeof data === 'string') {
-      this._inner.send(data);
-    } else if (typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView(data)) {
-      this._inner.send(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength));
-    } else {
-      try { this._inner.send(data); } catch(_) {}
+    try {
+      if (data instanceof ArrayBuffer) {
+        this._inner.send(data);
+      } else if (typeof data === 'string') {
+        this._inner.send(data);
+      } else if (typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView(data)) {
+        this._inner.send(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength));
+      } else {
+        this._inner.send(data);
+      }
+    } catch(e) {
+      console.error('[EaglerLite] Epoxy send error:', e);
     }
   };
 
@@ -177,7 +223,10 @@
     if (this._inner) { try { this._inner.close(code || 1000, reason || ''); } catch(_) {} }
     this.readyState = 3;
     this._closed = true;
-    this._dispatch('close', { type: 'close', code: code || 1000, reason: reason || '', wasClean: true, target: this });
+    if (!this._dispatchedClose) {
+      this._dispatch('close', { type: 'close', code: code || 1000, reason: reason || '', wasClean: true, target: this });
+      this._dispatchedClose = true;
+    }
   };
 
   // --- AutoWS: tries direct first, falls back to EpoxyWS ---
@@ -199,6 +248,7 @@
     this._directOpened = false;
     this._triedEpoxy = false;
     this._closed = false;
+    this._dispatchedClose = false;
 
     // Validate URL synchronously (like native WebSocket)
     var parsed;
@@ -237,6 +287,8 @@
     this._inner.onclose = function(e) {
       if (self._directOpened || self.readyState >= 2) {
         // Connection was open then closed, or was explicitly closed
+        if (self._dispatchedClose) return;
+        self._dispatchedClose = true;
         self.readyState = 3;
         self._closed = true;
         self._dispatch('close', { type: 'close', code: e.code, reason: e.reason, wasClean: e.wasClean, target: self });
@@ -308,28 +360,33 @@
     var ep = new EpoxyWS(self._origUrl, self._origProtocols);
     self._inner = ep;
 
-    // Forward events from EpoxyWS to this AutoWS
-    var savedOnopen = self._onopen;
-    var savedOnmessage = self._onmessage;
-    var savedOnclose = self._onclose;
-    var savedOnerror = self._onerror;
-    var savedListeners = self._listeners;
+    // Share listeners and event handlers — EpoxyWS dispatches directly to AutoWS's listeners
+    // We don't reassign _listeners because the game may have already called addEventListener on the AutoWS
+    // Instead, EpoxyWS dispatches, and we forward from ep to self
+    // But since ep._listeners is separate, we need to make ep dispatch to self's listeners
 
-    ep._listeners = savedListeners;
-    ep._onopen = function(e) {
-      self.readyState = 1;
-      self._dispatch('open', e);
-    };
-    ep._onmessage = function(e) {
-      self._dispatch('message', e);
-    };
-    ep._onclose = function(e) {
-      self.readyState = 3;
-      self._closed = true;
-      self._dispatch('close', e);
-    };
-    ep._onerror = function(e) {
-      self._dispatch('error', e);
+    // Override ep's _dispatch to forward to self
+    var origEpDispatch = ep._dispatch.bind(ep);
+    ep._dispatch = function(type, event) {
+      event = event || {};
+      event.target = self; // Target is the AutoWS, not the inner EpoxyWS
+      event.currentTarget = self;
+      event.type = type;
+
+      // Update self's readyState based on epoxy events
+      if (type === 'open') { self.readyState = 1; }
+      if (type === 'close') {
+        if (self._dispatchedClose) return;
+        self._dispatchedClose = true;
+        self.readyState = 3;
+        self._closed = true;
+      }
+
+      // Dispatch to self's handlers
+      var handler = self['_on' + type];
+      if (handler) { try { handler.call(self, event); } catch(_) {} }
+      var ls = self._listeners[type];
+      if (ls) { for (var i = 0; i < ls.length; i++) { try { ls[i].call(self, event); } catch(_) {} } }
     };
   };
 
@@ -349,13 +406,16 @@
     if (this._inner) { try { this._inner.close(code, reason); } catch(_) {} }
     this.readyState = 3;
     this._closed = true;
-    this._dispatch('close', { type: 'close', code: code || 1000, reason: reason || '', wasClean: true, target: this });
+    if (!this._dispatchedClose) {
+      this._dispatch('close', { type: 'close', code: code || 1000, reason: reason || '', wasClean: true, target: this });
+      this._dispatchedClose = true;
+    }
   };
 
   // --- Replace window.WebSocket ---
 
   window.WebSocket = function(url, protocols) {
-    // Don't wrap the wisp proxy connection itself
+    // Don't wrap the wisp proxy connection itself — it needs native WebSocket
     if (url === wispUrl) {
       return new origWS(url, protocols);
     }
@@ -375,6 +435,9 @@
     if (!u.pathname.endsWith('/')) { u.pathname += '/'; }
     wispUrl = u.href;
   };
+
+  // Allow checking if epoxy is ready
+  window.__eaglerliteEpoxyReady = function() { return epoxyReady; };
 
   console.log('[EaglerLite] Wispcraft connector loaded (wisp:', wispUrl + ')');
 })();
