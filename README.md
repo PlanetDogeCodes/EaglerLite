@@ -64,17 +64,26 @@ Each layer has a heartbeat monitor that tracks `lastActivity` and fires `onclose
 
 A separate Cloudflare Worker pings the proxy's `/health` endpoint every minute to keep the proxy from sleeping.
 
-## Compatibility
+### Compatibility
 
 - Eaglercraft 1.12.2 — primary target, all features
 - Eaglercraft 1.21.11 — not currently supported, but is coming soon
 
-## Credits
+### Credits
 
 - Eaglercraft — not created by me; all credit to its respective authors
 - EaglerLite — created and compiled by [PlanetDoge](https://github.com/PlanetDogeCodes)
 - License — Apache 2.0; redistribution without attribution is prohibited
 
-## Feedback
+### Disclaimer
+EaglerLite is an independent optimization tool and is not affiliated with, endorsed by, or sponsored by Mojang Studios, Microsoft, or the creators of Eaglercraft. "Minecraft" is a trademark of Mojang Studios. All trademarks and registered trademarks are the property of their respective owners.
+
+EaglerLite does not distribute or modify any game files. It is a launcher that fetches and runs the Eaglercraft client, which is separately developed and maintained by third parties. EaglerLite's code interacts with the game at the browser API level only — no game assets, source code, or proprietary content are included, modified, or redistributed.
+
+This software is provided "as is," without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement. In no event shall the authors or copyright holders be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
+
+By using EaglerLite, you acknowledge that you are solely responsible for complying with any applicable terms of service, end-user license agreements, or other policies that may govern your use of the game or its associated services. The authors of EaglerLite do not condone, encourage, or facilitate any violation of such terms.
+
+### Feedback
 
 Bugs, feature requests, or questions: [Discord](https://discord.gg/2Tz8wxv9yu) or [open an issue](https://github.com/PlanetDogeCodes/EaglerLite).
