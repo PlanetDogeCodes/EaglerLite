@@ -2,9 +2,6 @@
 
 A lightweight but powerful optimization layer for Eaglercraft.
 
->[DISCLAIMER]
->
-
 
 ### What it actually is
 
