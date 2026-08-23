@@ -29,7 +29,7 @@
             value.servers = [
   { addr: "wss://mc.voidsent.net", name: "Voidsent MC - PVP, Survival, etc" },
   { addr: "wss://anarchy.playit.plus", name: "1 Builder 2 Tools Anarchy" },
-  { addr: "wss://toasttmc.eagler.cc", name: "ToastMC" },
+  { addr: "wss://toastmcc.eagler.cc", name: "ToastMC" },
   { addr: "https://github.com/PlanetDogeCodes/EaglerLite", name: "EaglerLite created by Planet_Doge" },
   { addr: "Contact us on this Discord: https://discord.gg/UEE39zHuCx", name: "Want to see your server here?" }
 ];
