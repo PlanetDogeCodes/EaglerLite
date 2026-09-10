@@ -1,9 +1,4 @@
-/* EaglerLite v2.2 — repo loader (launch-options source of truth).
-   This single file defines the default launch options (the server list below, forced onto
-   window.eaglercraftXOpts) for BOTH the regular EaglerLite launcher and the Khan Academy
-   edition: each launcher reads this file live from the CDN and mirrors whatever list it
-   contains, so editing this list here keeps the two editions in sync. Edit the entries in
-   value.servers below (addr must be ws:// or wss:// to appear as a playable server). */
+
 "use strict";
 (function(){
         const opts = {};
@@ -36,7 +31,6 @@
   { addr: "wss://mc.1b2t.xyz", name: "1b2t" },
   { addr: "wss://mc.voidsent.net", name: "Voidsent MC - PVP, Survival, etc" },
   { addr: "wss://anarchy.playit.plus", name: "1 Builder 2 Tools Anarchy" },
-  { addr: "wss://toastmcc.eagler.cc", name: "ToastMC" },
   { addr: "https://github.com/PlanetDogeCodes/EaglerLite", name: "EaglerLite created by Planet_Doge" },
   { addr: "Contact us on this Discord: https://discord.gg/UEE39zHuCx", name: "Want to see your server here?" }
 ];
