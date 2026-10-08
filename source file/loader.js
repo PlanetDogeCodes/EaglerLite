@@ -8,6 +8,8 @@
         
         And yet another included benefit is speed. Because the browser doesn't have to decompress the entire HTML every time you launch (the pre-decompressed code is already cached
         in-memory), and most modern browsers employ V8 bytecode caching, smaller assets can be processed asynchronously while the engine starts up, which means the game launches about 14x faster. 
+
+        Essentially, this is getting the same performance of an integrated web sever but it's all local.
 */
 
 "use strict";
