@@ -1,3 +1,14 @@
+/* 
+        Thought that I'd come back around and explain some things after 2 years of this amlost exact opts config running.
+        This loader fetches the game source (in this case, 1.12.2.gz) from GitHub using the JSdelivr CDN. It then caches the ENTIRE game code inside your browser's IndexedDB
+        Upon next launch, if the game is already cached, it skips the download step unless there was a recent modification.
+
+        Essentially, this is a roundabout way of launching the game that doesn't require a massive HTML file to be stored and opened directly. 
+        Even better, because the game source gets cached locally, after fetching and decompressing the source once you never have to again. This means offline play is completely possible.
+        
+        And yet another included benefit is speed. Because the browser doesn't have to decompress the entire HTML every time you launch (the pre-decompressed code is already cached
+        in-memory), and most modern browsers employ V8 bytecode caching, smaller assets can be processed asynchronously while the engine starts up, which means the game launches about 14x faster. 
+*/
 
 "use strict";
 (function(){
@@ -28,9 +39,9 @@
           enumerable: true,
           set(value) {
             value.servers = [
-  { addr: "wss://mc.1b2t.xyz", name: "1b2t" },
-  { addr: "wss://mc.voidsent.net", name: "Voidsent MC - PVP, Survival, etc" },
-  { addr: "wss://anarchy.playit.plus", name: "1 Builder 2 Tools Anarchy" },
+  { addr: "wss://mc.1b2t.xyz", name: "1 Builder 2 Tools Anarchy" },
+  { addr: "wss://anarchy.playit.plus", name: "1B2T Alternate Link" },
+  { addr: "wss://mc.voidsent.net", name: "Voidsent MC" },
   { addr: "https://github.com/PlanetDogeCodes/EaglerLite", name: "EaglerLite created by Planet_Doge" },
   { addr: "Contact us on this Discord: https://discord.gg/UEE39zHuCx", name: "Want to see your server here?" }
 ];
@@ -42,14 +53,15 @@
         });
 
 
+        // Cloudflare IPFS was discontinued, so no more of those links
         const IPFS_GATEWAYS = [
                 makePatternA("gateway.ipfs.io"),
                 makePatternB("4everland.io"),
                 makePatternB("dweb.link"),
-                makePatternA("cloudflare-ipfs.com"),
-                makePatternB("cf-ipfs.com"),
                 makePatternA("w3s.link"),
                 makePatternA("storry.tv"),
+                
+                // NFTstorage no longer accepts uploads so I may remove this if I need to make some major updates to the loader
                 makePatternB("nftstorage.link")
         ];
 
@@ -448,6 +460,9 @@
                 }
         }
 
+        /* Essentially dead code since URL parameters don't apply to about:blank pages. Still useful if you decide to load the game through a URL.
+
+        
         if(!window.disableUserscripts) {
                 var q = window.location.search;
                 if(typeof q === "string" && q.startsWith("?")) {
@@ -471,6 +486,7 @@
                         }
                 }
         }
+        */
         function isVigg(uri) {
                 return (typeof uri === "string") && uri.toLowerCase().indexOf(atob("bmlnaHRzaGFk")) !== -1;
         }
